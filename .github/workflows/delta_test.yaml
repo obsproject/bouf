@@ -15,7 +15,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: Deploy
+    name: Delta Test
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -29,7 +29,7 @@ jobs:
       - name: Build (Release)
         run: cargo build -r
 
-      - name: Run Delta Build
+      - name: Download and Extract builds
         run: |
           echo "::group::Download builds"
           mkdir -p test/old
@@ -41,11 +41,9 @@ jobs:
           7z x test/old.zip -otest/old/old.version
           7z x test/new.zip -otest/new
           echo "::endgroup::"
-          
-          # build!
-          echo "::group::Run Delta Generation"
-          cargo run -r --bin create-deltas -- --old test/old --new test/new --out test/out
-          echo "::endgroup::"
+
+      - name: Create Delta Patches
+        run: target/release/create-deltas --old test/old --new test/new --out test/out
 
       - name: Upload Delta Patches
         uses: actions/upload-artifact@v3
