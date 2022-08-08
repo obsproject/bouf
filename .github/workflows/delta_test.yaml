@@ -1,0 +1,54 @@
+name: Test Delta Generation
+
+on:
+  workflow_dispatch:
+    inputs:
+      old_obs:
+        description: 'ZIP of old build to use as origin'
+        type: string
+        required: true
+      new_obs:
+        description: 'ZIP of new build to use as target'
+        type: string
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Restore Rust Cache
+        uses: Swatinem/rust-cache@v1
+
+      - name: Install 7zip
+        run: sudo apt update -y && sudo apt -y install p7zip
+
+      - name: Build (Release)
+        run: cargo build -r
+
+      - name: Run Delta Build
+        run: |
+          echo "::group::Download builds"
+          mkdir -p test/old
+          wget "${{ inputs.old_obs }}" -O test/old.zip
+          wget "${{ inputs.new_obs }}" -O test/new.zip
+          echo "::endgroup::"
+          
+          echo "::group::Extract builds"
+          7z x test/old.zip -otest/old/old.version
+          7z x test/new.zip -otest/new
+          echo "::endgroup::"
+          
+          # build!
+          echo "::group::Run Delta Generation"
+          cargo run -r --bin create-deltas -- --old test/old --new test/new --out test/out
+          echo "::endgroup::"
+
+      - name: Upload Delta Patches
+        uses: actions/upload-artifact@v3
+        with:
+          name: delta_patches
+          path: test/out

@@ -1,0 +1,118 @@
+[env]
+output_dir = "C:/Path/to/output"
+sevenzip_path = "C:/path/to/7z.exe"
+openssl_path = "C:/Path/to/OpenSSL.exe"
+makensis_path = "C:/Path/to/makensis.exe"
+signtool = "C:/Path/to/signtool.exe"
+signtool_opts = ["sign", "/fd", "sha512", "/n", "<Name>", "/t", "http://timestamp.digicert.com"]
+
+## Preparation steps
+[prepare]
+
+[prepare.copy]
+# This system is 64-bit only, so ignore 32 bit build files
+excludes = [
+    "bin/32bit",
+    "obs-plugins/32bit",
+]
+# Overrides files in input dir with specified ones.
+# Note that these files will also be excluded from the codesign/pdb stripping step
+overrides = [
+    ["data/obs-plugins/win-capture/graphics-hook64.dll", "C:/path/to/override/graphics-hook64.dll"],
+    ["data/obs-plugins/win-capture/graphics-hook64.pdb", "C:/path/to/override/graphics-hook64.pdb"],
+]
+
+[prepare.codesign]
+skip = true
+sign_exts = ['exe', 'dll', 'pyd']
+
+[prepare.strip_pdbs]
+pdbcopy_32_path = "C:/Path/to/x86/pdbcopy"
+pdbcopy_64_path = "C:/Path/to/x64/pdbcopy"
+# PDBs to not strip
+exclude = []
+
+## Delta patch generation
+[generate]
+patch_type = "bsdiff_lzma"
+previous_dir = "C:/path/to/previous/versions"
+# Removed files are detected automatically, but if the removal cannot be detected automatically,
+# e.g. because the affected old version is no longer used in generating patches, specify them here.
+# Note: this will be added to the corresponding package based on the include filter!
+removed_files = [
+    "obs-plugins/64bit/decklink-ouput-ui.dll"
+]
+
+# Packages are processed in the specified order.
+# A package without include filters will be assigned any remaining files
+[[generate.packages]]
+name = "browser"
+# Only include files matching the specified patterns
+include_files = [
+    "obs-browser",
+    "locales/",
+    "cef.pak",
+    "cef_100_percent.pak",
+    "cef_200_percent.pak",
+    "cef_extensions.pak",
+    "cef-bootstrap.exe",
+    "cef-bootstrap.pdb",
+    "obs-browser-page.exe",
+    "obs-browser-page.pdb",
+    "chrome_elf.dll",
+    "devtools_resources.pak",
+    "icudtl.dat",
+    "libcef.dll",
+    "libEGL.dll",
+    "libGLESv2.dll",
+    "natives_blob.bin",
+    "obs-browser.dll",
+    "obs-browser.pdb",
+    "snapshot_blob.bin",
+    "v8_context_snapshot.bin",
+]
+
+[[generate.packages]]
+# catches all remaining
+name = "core"
+
+## Packaging steps
+[package]
+
+[package.installer]
+nsis_script = "C:/Path/to/installer.nsi"
+# Note: {version} will be <Major>.<Minor>[.<Patch>] and suffixied with "-rc<Num>" or "-beta<Num>" if provided
+name = "OBS-Studio-{version}.exe"
+sign = false
+
+[package.zip]
+name = "OBS-Studio-{version}.zip"
+
+[package.pdbs_zip]
+skip_for_prerelease = true
+name = "OBS-Studio-{version}-pdbs.zip"
+
+[package.updater]
+sign = false
+private_key = "C:/Path/to/privkey.pem"
+updater_path = "C:/Path/to/updater.exe"
+
+[package.updater.manifest]
+pandoc_path = "C:/path/to/pandoc.exe"
+# Hashes of the specified files are also added to the manifest, if the path is empty, an empty hash will be added.
+# Note that {zip} and {installer} will be replaced by the path of the previously created zip and installer files.
+additional_file_hashes = [
+    ["full_installer_x64", "{installer}"],
+    ["full_installer_x86", ""],
+    ["full_zip_x64", "{zip}"],
+    ["full_zip_x86", ""],
+    ["small_installer_x64", ""],
+    ["small_installer_x86", ""],
+    ["small_zip_x64", ""],
+    ["small_zip_x86", ""],
+    ["vc2019_redist_x64", "C:/path/to/vcredist"],
+    ["vc2019_redist_x86", ""],
+]
+
+[post]
+move_to_old = true
