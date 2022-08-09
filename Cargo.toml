@@ -1,5 +1,5 @@
 [package]
-name = "foub"
+name = "bouf"
 version = "0.1.0"
 authors = ["Dennis <dennis@obsproject.com>"]
 edition = "2021"
@@ -7,12 +7,12 @@ autobins = false
 
 # Main tool
 [[bin]]
-name = "foub"
+name = "bouf"
 path = "src/main.rs"
 
 # Standalone delta patch creator that will run on Linux as well
 [[bin]]
-name = "create-deltas"
+name = "bouf-gendeltas"
 path = "src/cli_delta.rs"
 
 [dependencies]

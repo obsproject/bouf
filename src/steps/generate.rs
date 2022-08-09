@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 use hashbrown::{HashMap, HashSet};
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressFinish, ProgressStyle};
-use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
@@ -105,6 +105,8 @@ pub fn create_patches(conf: &Config) -> Manifest {
     let old_hashes = build_hashlist_with_cache(&old_path);
     println!("[+] Determining number of patches to create...");
 
+    // Todo overrides / ignore list (note: this should be in the "prepare" step)
+
     // List of all unique patches to generate as old hash => new file
     let mut patch_list: HashMap<String, String> = HashMap::new();
     // Just used for logging
@@ -134,6 +136,11 @@ pub fn create_patches(conf: &Config) -> Manifest {
         hash_to_file.insert(fileinfo.hash.clone(), path.clone());
         patch_list.insert(fileinfo.hash.clone(), rel_path);
     }
+
+    // Add manually specified deleted files as well
+    conf.generate.removed_files.iter().for_each(|f| {
+        removed_files.insert(f.to_owned());
+    });
 
     let mut added_files_list = added_files.into_iter().collect::<Vec<_>>();
     added_files_list.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
@@ -173,65 +180,70 @@ pub fn create_patches(conf: &Config) -> Manifest {
     let serialized = serde_json::to_string_pretty(&test).unwrap();
     File::create("test.json").unwrap().write_all(&serialized.as_bytes());
 
-    // Map files to packages
+    // Map current/removed files to packages
     let mut all_files: HashSet<String> = new_hashes.keys().cloned().collect();
+    all_files.extend(removed_files);
+
+    let mut pattern_package: Vec<(String, &String)> = Vec::new();
+    let mut fallback: &String = &String::new();
     let mut package_map: HashMap<&String, &String> = HashMap::new();
-    // This could probably be done better.
+
     for package in &conf.generate.packages {
         if let Some(_filter) = &package.include_files {
-            let _filter_lower: Vec<String> = _filter.iter().map(|x| x.to_lowercase()).collect();
-            // This should be a crime.
-            all_files
-                .iter()
-                .filter(|fname| _filter_lower.iter().any(|needle| fname.to_lowercase().contains(needle)))
-                .for_each(|fname| {
-                    package_map.entry(fname).or_insert(&package.name);
-                });
-
-            // We're not messing with removed files while iterating, but only insert if it does not exist yet.
-            removed_files
-                .iter()
-                .filter(|fname| _filter_lower.iter().any(|needle| fname.to_lowercase().contains(needle)))
-                .for_each(|fname| {
-                    package_map.entry(fname).or_insert(&package.name);
-                });
-        } else {
-            all_files.iter().for_each(|fname| {
-                package_map.entry(fname).or_insert(&package.name);
-            });
-
-            removed_files.iter().for_each(|fname| {
-                package_map.entry(fname).or_insert(&package.name);
-            });
+            _filter.iter().for_each(|f| {
+                pattern_package.push((f.to_lowercase(), &package.name));
+            })
+        } else if fallback.is_empty() {
+            fallback = &package.name;
         }
     }
+
+    // Iterate over all files, assigning them to packages as needed
+    all_files.iter().for_each(|fname| {
+        let fname_lower = fname.to_lowercase();
+
+        match pattern_package
+            .iter()
+            .find(|(pattern, _)| fname_lower.contains(pattern))
+        {
+            Some((_, branch)) => package_map.insert(fname, branch),
+            None => package_map.insert(fname, fallback),
+        };
+    });
 
     println!("[+] Creating delta-patches...");
     let num = patch_list.len() as u64;
     let style = ProgressStyle::with_template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}").unwrap();
     let pbar = ProgressBar::new(num)
+        .with_style(style.clone())
+        .with_finish(ProgressFinish::AndLeave);
+
+    patch_list.par_iter().progress_with(pbar).for_each(|(hash, filename)| {
+        let branch = &conf.env.branch;
+        let package: &String = package_map.get(filename).unwrap();
+        let patch_filename = format!("updater/patches_studio/{branch}/{package}/{filename}/{hash}");
+        // Create proper PathBufs from the format we created
+        let outfile = out_path.join(patch_filename);
+        let oldfile = old_path.join(hash_to_file.get(hash).unwrap());
+        let newfile = new_path.join(&filename);
+        // Ensure directories exist (Note: this is thread-safe in Rust!)
+        fs::create_dir_all(outfile.parent().unwrap()).expect("Failed creating folder!");
+        utils::bsdiff::create_patch(&oldfile, &newfile, &outfile).expect("Creating hash failed horribly.");
+    });
+
+    println!("[+] Copying new build to updater structure...");
+    let pbar = ProgressBar::new(new_hashes.len() as u64)
         .with_style(style)
         .with_finish(ProgressFinish::AndLeave);
-    patch_list
-        .par_iter_mut()
-        .progress_with(pbar)
-        .for_each(|(hash, filename)| {
-            let branch = &conf.env.branch;
-            let package: &String = package_map.get(filename).unwrap();
-            let patch_filename = format!("patches_studio/{branch}/{package}/{filename}/{hash}");
-            // Create proper PathBufs from the format we created
-            let outfile = out_path.join(patch_filename);
-            let oldfile = old_path.join(hash_to_file.get(hash).unwrap());
-            let newfile = new_path.join(&filename);
-            // Ensure directories exist (Note: this is thread-safe in Rust!)
-            fs::create_dir_all(outfile.parent().unwrap());
-            utils::bsdiff::create_patch(&oldfile, &newfile, &outfile).expect("Creating hash failed horribly.");
-            // "filename" now becomes the hash of the patch file
-            // *filename = String::from(outfile.to_str().unwrap());
-        });
-
-    // Copy release to non-patch output dir based on packages
-    // update_studio
+    new_hashes.par_iter().progress_with(pbar).for_each(|(filename, _)| {
+        let branch = &conf.env.branch;
+        let package: &String = package_map.get(filename).unwrap();
+        let patch_filename = format!("updater/update_studio/{branch}/{package}/{filename}");
+        let updater_file = out_path.join(patch_filename);
+        let build_file = new_path.join(&filename);
+        fs::create_dir_all(build_file.parent().unwrap()).expect("Failed creating folder!");
+        fs::copy(build_file, updater_file).expect("Failed copying file!");
+    });
 
     // Create the manifest
     let mut manifest = Manifest {
@@ -250,12 +262,13 @@ pub fn create_patches(conf: &Config) -> Manifest {
         };
         manifest_package.removed_files = removed_files_list
             .iter()
-            .filter(|f| package_map.get(f).unwrap().as_str() == package.name.as_str())
+            .filter(|f| package_map.get(f).unwrap().as_str() == package.name)
             .cloned()
             .collect();
         manifest_package
             .removed_files
             .sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
+
         manifest_package.files = new_hashes
             .iter()
             .filter(|(f, _)| package_map.get(f).unwrap().as_str() == package.name)

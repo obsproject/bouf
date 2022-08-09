@@ -1,6 +1,6 @@
+use crate::config::Config;
 use std::fs;
 use std::path::Path;
-use crate::config::Config;
 
 mod config;
 mod steps;

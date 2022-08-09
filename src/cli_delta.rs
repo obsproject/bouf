@@ -9,6 +9,8 @@ mod config;
 mod steps;
 mod utils;
 
+// Dedicated Delta Patch builder for testing or regenerating patches if required.
+
 #[derive(Parser, Debug)]
 #[clap(about, long_about = None)]
 struct Args {
@@ -23,7 +25,7 @@ struct Args {
     beta: Option<u8>,
     #[clap(long, value_parser, value_name = "RC number")]
     rc: Option<u8>,
-    #[clap(long, value_parser, value_name = "Beta number")]
+    #[clap(long, value_parser, value_name = "Beta branch")]
     branch: Option<String>,
 
     // Optional overrides
