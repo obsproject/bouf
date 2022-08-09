@@ -7,13 +7,17 @@ on:
         description: 'ZIP of old build to use as origin'
         type: string
         required: true
+      older_obs:
+        description: 'ZIP of old build to use as origin'
+        type: string
+        required: true
       new_obs:
         description: 'ZIP of new build to use as target'
         type: string
         required: true
 
 jobs:
-  deploy:
+  delta_create:
     runs-on: ubuntu-latest
     name: Delta Test
     steps:
@@ -34,16 +38,18 @@ jobs:
           echo "::group::Download builds"
           mkdir -p test/old
           wget "${{ inputs.old_obs }}" -O test/old.zip
+          wget "${{ inputs.older_obs }}" -O test/older.zip
           wget "${{ inputs.new_obs }}" -O test/new.zip
           echo "::endgroup::"
           
           echo "::group::Extract builds"
-          7z x test/old.zip -otest/old/old.version
+          7z x test/old.zip -otest/old/old
+          7z x test/older.zip -otest/old/older
           7z x test/new.zip -otest/new
           echo "::endgroup::"
 
       - name: Create Delta Patches
-        run: target/release/create-deltas --old test/old --new test/new --out test/out
+        run: target/release/bouf-gendeltas -c config.example.toml --version 28.0.0 --beta 1 --new test/new --old test/old --out test/out
 
       - name: Upload Delta Patches
         uses: actions/upload-artifact@v3
