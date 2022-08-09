@@ -1,19 +1,49 @@
 use core::fmt::Write;
-use std::fs::File;
+use std::fs::{File, Metadata};
 use std::io::Read;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+#[cfg(target_os = "linux")]
+use std::os::linux::fs::MetadataExt;
+#[cfg(target_os = "windows")]
+use std::os::windows::fs::MetadataExt;
 
 use blake2::digest::{Update, VariableOutput};
 use blake2::Blake2bVar;
 use hashbrown::HashMap;
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressFinish, ProgressStyle};
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
+use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 use walkdir::{DirEntry, WalkDir};
 
 const BLAKE2_HASH_SIZE: usize = 20;
 const READ_BUFSIZE: usize = usize::pow(2, 16);
 
-pub fn hash_file(path: &Path) -> String {
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
+pub struct FileInfo {
+    pub hash: String,
+    pub size: u64,
+}
+
+#[cfg(target_os = "windows")]
+fn create_file_info(hash_str: String, file: &File) -> FileInfo {
+    let file_meta = file.metadata().expect("Unable to get file metadata");
+    FileInfo {
+        hash: hash_str,
+        size: file_meta.file_size(),
+    }
+}
+#[cfg(target_os = "linux")]
+fn create_file_info(hash_str: String, file: &File) -> FileInfo {
+    let file_meta = file.metadata().expect("Unable to get file metadata");
+    FileInfo {
+        hash: hash_str,
+        size: file_meta.st_size(),
+    }
+}
+
+pub fn hash_file(path: &Path) -> FileInfo {
     let mut file = File::open(path).expect("Unable to open file");
     let mut hasher = Blake2bVar::new(BLAKE2_HASH_SIZE).unwrap();
 
@@ -38,11 +68,11 @@ pub fn hash_file(path: &Path) -> String {
         write!(s, "{:02x}", byte).unwrap();
     }
 
-    s
+    create_file_info(s, &file)
 }
 
-pub fn get_dir_hashes(path: &Path, cache: Option<&HashMap<String, String>>) -> HashMap<String, String> {
-    let mut hashes: HashMap<String, String> = HashMap::new();
+pub fn get_dir_hashes(path: &PathBuf, cache: Option<HashMap<String, FileInfo>>) -> HashMap<String, FileInfo> {
+    let mut hashes: HashMap<String, FileInfo> = HashMap::new();
 
     for file in WalkDir::new(path)
         .min_depth(2)
@@ -57,13 +87,13 @@ pub fn get_dir_hashes(path: &Path, cache: Option<&HashMap<String, String>>) -> H
         let relative_path_str = String::from(relative_path).replace("\\", "/");
 
         if let Some(_cache_entry) = cache.as_ref().and_then(|_cache| _cache.get(&relative_path_str)) {
-            hashes.insert(relative_path_str, _cache_entry.to_string());
+            hashes.insert(relative_path_str, _cache_entry.to_owned());
         } else {
-            hashes.insert(relative_path_str, String::new());
+            hashes.insert(relative_path_str, FileInfo { ..Default::default() });
         }
     }
 
-    let num = hashes.iter().filter(|(_, v)| v.is_empty()).count() as u64;
+    let num = hashes.iter().filter(|(_, v)| v.hash.is_empty()).count() as u64;
 
     if num == 0 {
         println!(" => All file hashes loaded from cache.");
@@ -77,10 +107,10 @@ pub fn get_dir_hashes(path: &Path, cache: Option<&HashMap<String, String>>) -> H
         .with_finish(ProgressFinish::AndLeave);
     hashes
         .par_iter_mut()
-        .filter(|(_, v)| v.is_empty())
+        .filter(|(_, v)| v.hash.is_empty())
         .progress_with(pbar)
-        .for_each(|(f_path, hash)| {
-            *hash = hash_file(path.join(Path::new(f_path)).as_path());
+        .for_each(|(f_path, fileinfo)| {
+            *fileinfo = hash_file(path.join(Path::new(f_path)).as_path());
         });
 
     hashes
@@ -94,7 +124,7 @@ mod bsdiff_tests {
 
     #[test]
     fn test_blake2() {
-        let hash = hash_file(Path::new("test_files/in.txt"));
-        assert_eq!(hash, "ea08af20e468ff39054c5832b26ee2d80f467045");
+        let finfo = hash_file(Path::new("test_files/in.txt"));
+        assert_eq!(finfo.hash, "ea08af20e468ff39054c5832b26ee2d80f467045");
     }
 }

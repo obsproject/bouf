@@ -7,11 +7,11 @@ use std::path::Path;
 use bsdiff::diff::diff;
 use xz2::write::XzEncoder;
 
-use crate::utils::hash::hash_file;
+use crate::utils::hash::{hash_file, FileInfo};
 
 const LZMA_PRESET: u32 = 9 | 1 << 31;
 
-pub fn create_patch(old: &Path, new: &Path, patch: &Path) -> Result<String> {
+pub fn create_patch(old: &Path, new: &Path, patch: &Path) -> Result<FileInfo> {
     let mut old_file = File::open(old).expect("Unable to open old file");
     let mut new_file = File::open(new).expect("Unable to open new file");
     let mut patch_file = File::create(patch).expect("Unable to open patch file");
@@ -47,7 +47,7 @@ mod bsdiff_tests {
         let old = Path::new("test_files/in.txt");
         let new = Path::new("test_files/out.txt");
         let patch = Path::new("test_files/patch.bin");
-        let patch_hash = create_patch(old, new, patch).unwrap();
-        assert_eq!(patch_hash, "cc44d732f2f07d39fa556c2d7336da73e1671783");
+        let patch_info = create_patch(old, new, patch).unwrap();
+        assert_eq!(patch_info.hash, "cc44d732f2f07d39fa556c2d7336da73e1671783");
     }
 }

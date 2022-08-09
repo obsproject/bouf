@@ -1,31 +1,62 @@
 use std::fs;
+use std::fs::File;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use clap::Parser;
 
+mod config;
 mod steps;
 mod utils;
 
 #[derive(Parser, Debug)]
 #[clap(about, long_about = None)]
 struct Args {
+    // Required
     #[clap(short, long, value_parser, value_name = "Config file")]
-    config: Option<PathBuf>,
+    config: PathBuf,
+    #[clap(long, value_parser, value_name = "OBS main version (Major.Minor.Patch)")]
+    version: String,
 
+    // Optional version suffix
+    #[clap(long, value_parser, value_name = "Beta number")]
+    beta: Option<u8>,
+    #[clap(long, value_parser, value_name = "RC number")]
+    rc: Option<u8>,
+    #[clap(long, value_parser, value_name = "Beta number")]
+    branch: Option<String>,
+
+    // Optional overrides
     #[clap(long, value_parser, value_name = "new build")]
-    new: PathBuf,
+    new: Option<PathBuf>,
     #[clap(long, value_parser, value_name = "old builds")]
-    old: PathBuf,
+    old: Option<PathBuf>,
     #[clap(long, value_parser, value_name = "output dir")]
-    out: PathBuf,
+    out: Option<PathBuf>,
 }
 
 fn main() {
-    let args = Args::parse();
+    let args: Args = Args::parse();
 
-    let path = fs::canonicalize(args.new).unwrap();
-    let old_path = fs::canonicalize(args.old).unwrap();
-    let out_path = fs::canonicalize(&args.out).unwrap_or(args.out);
+    let mut conf = config::Config::from_file(args.config.as_path());
+    conf.set_version(
+        &args.version,
+        args.beta.unwrap_or_default(),
+        args.rc.unwrap_or_default(),
+    );
+    conf.set_dirs(args.new, args.out, args.old);
+    // Override branch if desired
+    if let Some(branch) = args.branch {
+        conf.env.branch = branch;
+    }
 
-    steps::generate::create_patches(path.as_path(), old_path.as_path(), out_path.as_path())
+    let manifest = steps::generate::create_patches(&conf);
+
+    let manifest_filename = format!("manifest_{}.json", conf.env.branch);
+    let manifest_file = conf.env.output_dir.join(manifest_filename);
+    serde_json::to_string_pretty(&manifest).ok().and_then(|j| {
+        File::create(manifest_file.as_path())
+            .ok()
+            .and_then(|mut f: File| f.write_all(&j.as_bytes()).ok())
+    });
 }

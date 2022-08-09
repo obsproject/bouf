@@ -1,5 +1,11 @@
 [env]
+# Branch should be set via command line for correct output dir
+# branch = "stable"
+# Directories for building (can be overriden via command line)
+input_dir = "C:/Path/to/build"
 output_dir = "C:/Path/to/output"
+previous_dir = "C:/path/to/previous/versions"
+# Utilities
 sevenzip_path = "C:/path/to/7z.exe"
 openssl_path = "C:/Path/to/OpenSSL.exe"
 makensis_path = "C:/Path/to/makensis.exe"
@@ -23,19 +29,19 @@ overrides = [
 ]
 
 [prepare.codesign]
-skip = true
+do_sign = false
 sign_exts = ['exe', 'dll', 'pyd']
 
 [prepare.strip_pdbs]
-pdbcopy_32_path = "C:/Path/to/x86/pdbcopy"
-pdbcopy_64_path = "C:/Path/to/x64/pdbcopy"
+pdbcopy_path = "C:/Path/to/pdbcopy.exe"
 # PDBs to not strip
 exclude = []
 
 ## Delta patch generation
 [generate]
-patch_type = "bsdiff_lzma"
-previous_dir = "C:/path/to/previous/versions"
+# Maybe in the future there will be more!
+# patch_type = "bsdiff_lzma"
+
 # Removed files are detected automatically, but if the removal cannot be detected automatically,
 # e.g. because the affected old version is no longer used in generating patches, specify them here.
 # Note: this will be added to the corresponding package based on the include filter!
@@ -46,7 +52,7 @@ removed_files = [
 # Packages are processed in the specified order.
 # A package without include filters will be assigned any remaining files
 [[generate.packages]]
-name = "browser"
+name = "obs-browser"
 # Only include files matching the specified patterns
 include_files = [
     "obs-browser",
