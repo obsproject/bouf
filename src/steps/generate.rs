@@ -27,17 +27,8 @@ pub struct Manifest {
     pub version_patch: u8,
     pub beta: u8,
     pub rc: u8,
-    // ToDo figure out what to do with this
+    // ToDo figure out what to do with this, maybe a timestamp?
     pub nightly: u32,
-    // Legacy fields
-    pub full_installer_x64: String,
-    pub full_installer_x86: String,
-    pub full_zip_x64: String,
-    pub full_zip_x86: String,
-    pub small_installer_x64: String,
-    pub small_installer_x86: String,
-    pub small_zip_x64: String,
-    pub small_zip_x86: String,
     pub vc2019_redist_x64: String,
     pub vc2019_redist_x86: String,
 }
