@@ -19,3 +19,6 @@ jobs:
 
       - name: Build (Release)
         run: cargo build -r
+
+      - name: Run Tests
+        run: cargo test
