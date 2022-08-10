@@ -19,6 +19,14 @@ path = "src/cli_prepare.rs"
 name = "bouf-buildpatches"
 path = "src/cli_delta.rs"
 
+[[bin]]
+name = "bouf-pack"
+path = "src/cli_package.rs"
+
+[[bin]]
+name = "bouf-sign"
+path = "src/cli_sign.rs"
+
 [dependencies]
 # general
 walkdir = "2"
