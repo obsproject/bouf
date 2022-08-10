@@ -1,10 +1,10 @@
-use crate::config::Config;
-use std::fs;
+#![allow(dead_code)]
+
 use std::path::Path;
 
 mod config;
-mod steps;
 mod utils;
+use crate::config::Config;
 
 fn main() {
     let conf_path = Path::new("config.example.toml");
