@@ -166,5 +166,5 @@ pub fn codesign(path: &PathBuf, opts: &CodesignOptions) -> Result<(), Box<dyn st
 pub fn codesign(in_path: &PathBuf, opts: &CodesignOptions) -> Result<(), Box<dyn std::error::Error>> {
     println!("Codesigning is not (yet) supported on this platform.");
 
-    Ok()
+    Ok(())
 }
