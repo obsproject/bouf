@@ -116,10 +116,8 @@ pub fn get_dir_hashes(path: &PathBuf, cache: Option<HashMap<String, FileInfo>>) 
 }
 
 #[cfg(test)]
-mod bsdiff_tests {
+mod hash_tests {
     use super::*;
-    use blake2::digest::{Update, VariableOutput};
-    use blake2::Blake2bVar;
 
     #[test]
     fn test_blake2() {
