@@ -9,8 +9,8 @@ previous_dir = "C:/path/to/previous/versions"
 sevenzip_path = "C:/path/to/7z.exe"
 openssl_path = "C:/Path/to/OpenSSL.exe"
 makensis_path = "C:/Path/to/makensis.exe"
+pandoc_path = "C:/path/to/pandoc.exe"
 signtool = "C:/Path/to/signtool.exe"
-signtool_opts = ["sign", "/fd", "sha512", "/n", "<Name>", "/t", "http://timestamp.digicert.com"]
 
 ## Preparation steps
 [prepare]
@@ -22,20 +22,28 @@ excludes = [
     "obs-plugins/32bit",
 ]
 # Overrides files in input dir with specified ones.
-# Note that these files will also be excluded from the codesign/pdb stripping step
-overrides = [
-    ["data/obs-plugins/win-capture/graphics-hook64.dll", "C:/path/to/override/graphics-hook64.dll"],
-    ["data/obs-plugins/win-capture/graphics-hook64.pdb", "C:/path/to/override/graphics-hook64.pdb"],
-]
+# Note: These files will also be excluded from the codesign/pdb stripping step
+# Note: This can also be used to add additional files to a build directory
+# overrides = [
+#     ["data/obs-plugins/win-capture/graphics-hook64.dll", "C:/path/to/override/graphics-hook64.dll"],
+#     ["data/obs-plugins/win-capture/graphics-hook64.pdb", "C:/path/to/override/graphics-hook64.pdb"],
+# ]
 
 [prepare.codesign]
-do_sign = false
+skip_sign = false
+sign_name = "OBS Test"
+sign_digest = "sha512"
+sign_ts_serv = "http://timestamp.digicert.com"
 sign_exts = ['exe', 'dll', 'pyd']
 
 [prepare.strip_pdbs]
-pdbcopy_path = "C:/Path/to/pdbcopy.exe"
+pdbcopy_path = "C:/Program Files (x86)/Windows Kits/10/Debuggers/x64/pdbcopy.exe"
 # PDBs to not strip
-exclude = []
+exclude = [
+    "obs-frontend-api.pdb",
+    "obs64.pdb",
+    "obs.pdb",
+]
 
 ## Delta patch generation
 [generate]
@@ -93,32 +101,16 @@ sign = false
 
 [package.zip]
 name = "OBS-Studio-{version}.zip"
-
-[package.pdbs_zip]
+pdb_name = "OBS-Studio-{version}-pdbs.zip"
 skip_for_prerelease = true
-name = "OBS-Studio-{version}-pdbs.zip"
 
 [package.updater]
 sign = false
 private_key = "C:/Path/to/privkey.pem"
+# alternatively, the key may be specified as base64 encoded PEM/DER in an environment variables (UPDATER_PRIVATE_KEY)
 updater_path = "C:/Path/to/updater.exe"
-
-[package.updater.manifest]
-pandoc_path = "C:/path/to/pandoc.exe"
-# Hashes of the specified files are also added to the manifest, if the path is empty, an empty hash will be added.
-# Note that {zip} and {installer} will be replaced by the path of the previously created zip and installer files.
-additional_file_hashes = [
-    ["full_installer_x64", "{installer}"],
-    ["full_installer_x86", ""],
-    ["full_zip_x64", "{zip}"],
-    ["full_zip_x86", ""],
-    ["small_installer_x64", ""],
-    ["small_installer_x86", ""],
-    ["small_zip_x64", ""],
-    ["small_zip_x86", ""],
-    ["vc2019_redist_x64", "C:/path/to/vcredist"],
-    ["vc2019_redist_x86", ""],
-]
+vc_redist_path = "C:/path/to/vcredist"
 
 [post]
+# move processed input directory to "previous" folder after packaging is done
 move_to_old = true
