@@ -241,7 +241,7 @@ pub fn create_patches(conf: &Config) -> Manifest {
         let patch_filename = format!("updater/update_studio/{branch}/{package}/{filename}");
         let updater_file = out_path.join(patch_filename);
         let build_file = new_path.join(&filename);
-        fs::create_dir_all(build_file.parent().unwrap()).expect("Failed creating folder!");
+        fs::create_dir_all(updater_file.parent().unwrap()).expect("Failed creating folder!");
         fs::copy(build_file, updater_file).expect("Failed copying file!");
     });
 
