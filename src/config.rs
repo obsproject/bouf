@@ -42,7 +42,6 @@ pub struct EnvOptions {
     pub input_dir: PathBuf,
     pub output_dir: PathBuf,
     pub previous_dir: PathBuf,
-    pub makensis_path: PathBuf,
     // Todo replace 7zip, OpenSSL, Signtool
     // signtool_opts: Option<Vec<String>>,
 }
@@ -65,14 +64,17 @@ pub struct CopyOptions {
 #[derive(Deserialize, Default)]
 #[serde(default)]
 pub struct CodesignOptions {
-    pub do_sign: bool,
+    pub skip_sign: bool,
+    pub sign_name: String,
+    pub sign_digest: String,
+    pub sign_ts_serv: String,
     pub sign_exts: Vec<String>,
 }
 
 #[derive(Deserialize, Default)]
 #[serde(default)]
 pub struct StripPDBOptions {
-    pub pdbcopy_path: String,
+    pub pdbcopy_path: PathBuf,
     pub exclude: Vec<String>,
 }
 
@@ -81,22 +83,57 @@ pub struct StripPDBOptions {
 pub struct GenerationOptions {
     // patch_type: String,
     pub removed_files: Vec<String>,
-    pub packages: Vec<PackageOptions>,
+    pub packages: Vec<ManifestPackageOptions>,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(default)]
+pub struct ManifestPackageOptions {
+    pub name: String,
+    pub include_files: Option<Vec<String>>,
 }
 
 #[derive(Deserialize, Default)]
 #[serde(default)]
 pub struct PackageOptions {
-    pub name: String,
-    pub include_files: Option<Vec<String>>,
+    pub installer: InstallerOptions,
+    pub zip: ZipOptions,
+    pub updater: UpdaterOptions,
 }
-
-// Todo other package options
 
 #[derive(Deserialize, Default)]
 #[serde(default)]
-// TODO
-pub struct PostOptions {}
+pub struct InstallerOptions {
+    pub makensis_path: PathBuf,
+    pub nsis_script: String,
+    pub name: String,
+    pub skip_sign: bool,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(default)]
+pub struct ZipOptions {
+    pub name: String,
+    pub pdb_name: String,
+    pub skip_for_prerelease: bool,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(default)]
+pub struct UpdaterOptions {
+    pub pandoc_path: PathBuf,
+    pub sign: bool,
+    pub updater_path: PathBuf,
+    pub private_key: PathBuf,
+    pub private_key_env: String,
+    pub skip_for_prerelease: bool,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(default)]
+pub struct PostOptions {
+    pub move_to_old: bool,
+}
 
 impl Config {
     pub fn set_version(&mut self, version_string: &String, beta_num: u8, rc_num: u8) {

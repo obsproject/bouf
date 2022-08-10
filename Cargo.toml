@@ -10,9 +10,13 @@ autobins = false
 name = "bouf"
 path = "src/main.rs"
 
-# Standalone delta patch creator that will run on Linux as well
+# Standalone utilities for single steps
 [[bin]]
-name = "bouf-gendeltas"
+name = "bouf-prep"
+path = "src/cli_prepare.rs"
+
+[[bin]]
+name = "bouf-buildpatches"
 path = "src/cli_delta.rs"
 
 [dependencies]
@@ -26,9 +30,17 @@ toml = "0.5.9"
 # delta patching
 bsdiff = "0.1.6"
 xz2 = "0.1.7"
+rsa = { version = "0.6.1", features = ["pem"] }
 # hashing
 blake2 = "0.10.4"
 # parallel processing
 rayon = "1.5.3"
 indicatif = { version = "0.17.0", features = ["rayon"] }
 hashbrown = { version = "0.12", features = ["rayon", "serde"] }
+
+# Codesigning on Windows uses a signtool wrapper
+# tugger is really overkill and has *tons* of dependencies.
+# There are other options, but unfortunately they're not as flexible.
+# For the time being, this will have to do.
+[target.'cfg(windows)'.dependencies]
+tugger-windows-codesign = "0.8.0"
