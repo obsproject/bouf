@@ -1,18 +1,14 @@
-use bsdiff::patch::patch;
-use std::collections::HashMap as StdHashMap;
 use std::fs;
 use std::fs::File;
-use std::hash::Hash;
 use std::io::BufReader;
 use std::io::Write;
-use std::ops::Deref;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use hashbrown::{HashMap, HashSet};
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressFinish, ProgressStyle};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
-use serde_json::{Map, Value};
+use serde_json::Map;
 
 use crate::config::Config;
 use crate::utils;

@@ -1,5 +1,5 @@
 use core::fmt::Write;
-use std::fs::{File, Metadata};
+use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
@@ -14,7 +14,6 @@ use hashbrown::HashMap;
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressFinish, ProgressStyle};
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
-use serde_json::{Map, Value};
 use walkdir::{DirEntry, WalkDir};
 
 const BLAKE2_HASH_SIZE: usize = 20;
