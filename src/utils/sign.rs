@@ -38,3 +38,33 @@ pub fn sign_file(key: &RsaPrivateKey, path: &PathBuf) -> Result<(), Box<dyn std:
 
     Ok(())
 }
+
+#[cfg(test)]
+mod rsa_tests {
+    use super::*;
+    use crate::utils::hash::hash_file;
+    use std::env;
+    use std::path::PathBuf;
+
+    #[test]
+    fn test_rsa_sign() {
+        let key_path = PathBuf::from("extra/test_files/privatekey.pem");
+        let file_path = PathBuf::from("extra/test_files/in.txt");
+        let signature_path = PathBuf::from("extra/test_files/in.txt.sig");
+
+        // Try with key file
+        let key = load_key(Some(key_path.to_owned())).unwrap();
+        sign_file(&key, &file_path);
+        let finfo = hash_file(&signature_path);
+        assert_eq!(finfo.hash, "4aae469c5a90903a40f1757c7b50d38c5ddfb364");
+
+        // Try with env var
+        let b64_key = base64::encode(fs::read(key_path).unwrap());
+        env::set_var("UPDATER_PRIVATE_KEY", b64_key);
+
+        let key = load_key(None).unwrap();
+        sign_file(&key, &file_path);
+        let finfo = hash_file(&signature_path);
+        assert_eq!(finfo.hash, "4aae469c5a90903a40f1757c7b50d38c5ddfb364");
+    }
+}
