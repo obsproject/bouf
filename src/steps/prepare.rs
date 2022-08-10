@@ -5,10 +5,9 @@ use std::process::Command;
 use std::result::Result;
 
 #[cfg(target_os = "windows")]
-use tugger_windows_codesign;
+use tugger_windows_codesign::{CodeSigningCertificate, SigntoolSign, SystemStore, TimestampServer};
 
 use hashbrown::HashSet;
-use tugger_windows_codesign::{CodeSigningCertificate, SigntoolSign, SystemStore, TimestampServer};
 use walkdir::{DirEntry, WalkDir};
 
 use crate::config::{CodesignOptions, CopyOptions, StripPDBOptions};
