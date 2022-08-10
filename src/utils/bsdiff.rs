@@ -44,9 +44,9 @@ mod bsdiff_tests {
 
     #[test]
     fn test_diff() {
-        let old = Path::new("test_files/in.txt");
-        let new = Path::new("test_files/out.txt");
-        let patch = Path::new("test_files/patch.bin");
+        let old = Path::new("extra/test_files/in.txt");
+        let new = Path::new("extra/test_files/out.txt");
+        let patch = Path::new("extra/test_files/patch.bin");
         let patch_info = create_patch(old, new, patch).unwrap();
         assert_eq!(patch_info.hash, "cc44d732f2f07d39fa556c2d7336da73e1671783");
     }

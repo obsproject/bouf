@@ -124,7 +124,7 @@ mod bsdiff_tests {
 
     #[test]
     fn test_blake2() {
-        let finfo = hash_file(Path::new("test_files/in.txt"));
+        let finfo = hash_file(Path::new("extra/test_files/in.txt"));
         assert_eq!(finfo.hash, "ea08af20e468ff39054c5832b26ee2d80f467045");
     }
 }
