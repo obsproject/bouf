@@ -6,7 +6,7 @@ on:
 jobs:
   bouf:
     runs-on: windows-latest
-    name: Prepare release (without deltas)
+    name: Prepare OBS Release
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -30,14 +30,16 @@ jobs:
           mkdir test\new
           mkdir test\out
           mkdir test\old
-          Invoke-WebRequest -Uri "https://github.com/obsproject/obs-studio/releases/download/28.0.0-beta1/OBS-Studio-28.0-beta1-Full-x64.zip" -OutFile "new.zip"
+          Invoke-WebRequest -Uri "https://github.com/obsproject/obs-studio/releases/download/28.0.0-beta1/OBS-Studio-28.0-beta1-Full-x64.zip" -OutFile "old.zip"
+          Invoke-WebRequest -Uri "https://github.com/obsproject/obs-studio/releases/download/28.0.0-beta2/OBS-Studio-28.0-beta2-Full-x64.zip" -OutFile "new.zip"
           7z x new.zip -otest/new
+          7z x old.zip -otest/old/28.0.0-beta1
 
       - name: Build (Release)
         run: cargo build -r
 
-      - name: Run bouf (no Deltas)
-        run: target/release/bouf -c extra/ci/config.toml --version 28.0.0-beta1 --new test/new --old test/old --out test/out --skip-patches --clear-output
+      - name: Run bouf
+        run: target/release/bouf -c extra/ci/config.toml --version 28.0.0-beta2 --new test/new --old test/old --out test/out --clear-output
 
       - name: Upload results
         uses: actions/upload-artifact@v3
