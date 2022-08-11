@@ -21,14 +21,17 @@ pub fn run_nsis(conf: &Config) -> Result<(), Box<dyn std::error::Error>> {
     let new_version = &conf.obs_version.version_str;
     let tag_version = misc::get_filename_version(&conf.obs_version, false);
     let short_version = misc::get_filename_version(&conf.obs_version, true);
+    let nsis_script = conf.package.installer.nsis_script.canonicalize()?;
+
     // The build dir is the "install" subfolder in the output dir
     let build_dir = conf.env.output_dir.join("install").canonicalize()?;
-    let build_dir_str = build_dir.into_os_string().into_string().unwrap();
-    let nsis_script = conf.package.installer.nsis_script.canonicalize()?;
-    let script_dir = nsis_script.parent().unwrap();
+    let mut build_dir_str = build_dir.into_os_string().into_string().unwrap();
+    // Sanitise build dir string for NSIS
+    if build_dir_str.starts_with("\\") {
+        build_dir_str = build_dir_str.strip_prefix("\\\\?\\").unwrap().to_string();
+    }
 
     let args: Vec<OsString> = vec![
-        // "/NOCD".into(),
         format!("/DTAGVERSION={}", tag_version).into(),
         format!("/DAPPVERSION={}", new_version).into(),
         format!("/DSHORTVERSION={}", short_version).into(),
@@ -40,7 +43,6 @@ pub fn run_nsis(conf: &Config) -> Result<(), Box<dyn std::error::Error>> {
 
     println!(" => Running NSIS...");
     let output = Command::new(&conf.env.makensis_path)
-        .current_dir(script_dir)
         .args(args)
         .output()?;
 
