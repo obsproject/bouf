@@ -5,9 +5,13 @@ use std::process::Command;
 
 use crate::config::CodesignOptions;
 use crate::utils::errors::SomeError;
+
+#[cfg(target_os = "windows")]
 use winreg::enums::{HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_32KEY};
+#[cfg(target_os = "windows")]
 use winreg::RegKey;
 
+#[cfg(target_os = "windows")]
 pub fn sign(files: Vec<PathBuf>, opts: &CodesignOptions) -> Result<(), Box<dyn std::error::Error>> {
     let signtool = locate_signtool()?;
 
@@ -41,8 +45,17 @@ pub fn sign(files: Vec<PathBuf>, opts: &CodesignOptions) -> Result<(), Box<dyn s
     }
 }
 
+#[cfg(target_os = "linux")]
+pub fn sign(files: Vec<PathBuf>, opts: &CodesignOptions) -> Result<(), Box<dyn std::error::Error>> {
+    println!("Codesigning is not (yet) supported on this platform.");
+
+    Ok(())
+}
+
 // Based on https://github.com/forbjok/rust-codesign/blob/master/lib/src/signtool.rs (Apache-2/MIT)
 // But simplified to be 64-bit only, and slightly shittier error handling
+
+#[cfg(target_os = "windows")]
 fn locate_signtool() -> Result<PathBuf, SomeError> {
     const INSTALLED_ROOTS_REGKEY_PATH: &str = r"SOFTWARE\Microsoft\Windows Kits\Installed Roots";
     const KITS_ROOT_REGVALUE_NAME: &str = r"KitsRoot10";
