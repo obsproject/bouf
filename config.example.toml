@@ -7,10 +7,11 @@ output_dir = "C:/Path/to/output"
 previous_dir = "C:/path/to/previous/versions"
 # Utilities
 sevenzip_path = "C:/path/to/7z.exe"
-openssl_path = "C:/Path/to/OpenSSL.exe"
 makensis_path = "C:/Path/to/makensis.exe"
 pandoc_path = "C:/path/to/pandoc.exe"
-signtool = "C:/Path/to/signtool.exe"
+pdbcopy_path = "C:/Program Files (x86)/Windows Kits/10/Debuggers/x64/pdbcopy.exe"
+# signtool is found automatically
+# signtool = "C:/Path/to/signtool.exe"
 
 ## Preparation steps
 [prepare]
@@ -37,7 +38,6 @@ sign_ts_serv = "http://timestamp.digicert.com"
 sign_exts = ['exe', 'dll', 'pyd']
 
 [prepare.strip_pdbs]
-pdbcopy_path = "C:/Program Files (x86)/Windows Kits/10/Debuggers/x64/pdbcopy.exe"
 # PDBs to not strip
 exclude = [
     "obs-frontend-api.pdb",
@@ -97,7 +97,7 @@ name = "core"
 nsis_script = "C:/Path/to/installer.nsi"
 # Note: {version} will be <Major>.<Minor>[.<Patch>] and suffixied with "-rc<Num>" or "-beta<Num>" if provided
 name = "OBS-Studio-{version}.exe"
-sign = false
+skip_sign = false
 
 [package.zip]
 name = "OBS-Studio-{version}.zip"
@@ -105,7 +105,7 @@ pdb_name = "OBS-Studio-{version}-pdbs.zip"
 skip_for_prerelease = true
 
 [package.updater]
-sign = false
+skip_sign = true
 private_key = "C:/Path/to/privkey.pem"
 # alternatively, the key may be specified as base64 encoded PEM/DER in an environment variables (UPDATER_PRIVATE_KEY)
 updater_path = "C:/Path/to/updater.exe"
