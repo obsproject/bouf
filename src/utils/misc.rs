@@ -11,20 +11,22 @@ pub fn parse_version(version_string: &String) -> (u8, u8, u8, u8, u8) {
     let mut rc: u8 = 0;
 
     if parts.len() > 1 {
-        if parts[1].starts_with("beta") {
-            beta = parts[1][4..].parse().unwrap();
-        } else if parts[1].starts_with("rc") {
-            rc = parts[1][2..].parse().unwrap();
+        let suffix = parts[1];
+
+        // Parse -beta<Num> and -rc<Num> suffixes
+        if suffix.starts_with("beta") {
+            beta = suffix[4..].parse().unwrap();
+        } else if suffix.starts_with("rc") {
+            rc = suffix[2..].parse().unwrap();
         } else {
             panic!("Invalid version string!")
         }
     }
 
-    let parts: Vec<&str> = parts[0].split(".").collect();
-
-    let major: u8 = parts[0].parse().unwrap();
-    let minor: u8 = parts[1].parse().unwrap();
-    let patch: u8 = parts[2].parse().unwrap();
+    let numbers: Vec<&str> = parts[0].split(".").collect();
+    let major: u8 = numbers[0].parse().unwrap();
+    let minor: u8 = numbers[1].parse().unwrap();
+    let patch: u8 = numbers[2].parse().unwrap();
 
     (major, minor, patch, beta, rc)
 }
