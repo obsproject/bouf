@@ -177,7 +177,6 @@ pub struct UpdaterOptions {
     pub updater_path: PathBuf,
     pub private_key: PathBuf,
     pub vc_redist_path: PathBuf,
-    pub private_key_env: String,
     pub skip_for_prerelease: bool,
 }
 
