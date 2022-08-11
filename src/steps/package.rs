@@ -120,8 +120,8 @@ pub fn create_zips(conf: &Config) -> Result<(), Box<dyn std::error::Error>> {
 
     let obs_path = conf.env.output_dir.join("install").canonicalize()?;
     let pdb_path = conf.env.output_dir.join("pdbs").canonicalize()?;
-    let obs_zip_path = conf.env.output_dir.join(zip_name).canonicalize()?;
-    let pdb_zip_path = conf.env.output_dir.join(pdb_zip_name).canonicalize()?;
+    let obs_zip_path = conf.env.output_dir.join(zip_name);
+    let pdb_zip_path = conf.env.output_dir.join(pdb_zip_name);
 
     run_sevenzip(&conf.env.sevenzip_path, &obs_path, &obs_zip_path)?;
     if !conf.package.zip.skip_for_prerelease {
