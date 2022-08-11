@@ -130,15 +130,12 @@ pub fn create_zips(conf: &Config) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn run_pandoc(path: &PathBuf, out_path: &PathBuf) -> Result<String, Box<dyn std::error::Error>> {
-    let out_file = out_path.join("notes.html");
-
     let args: Vec<OsString> = vec![
         "--from".into(),
         "markdown".into(),
         "--to".into(),
         "html".into(),
-        path.to_owned().into_os_string(),
-        out_file.to_owned().into_os_string(),
+        path.to_owned().into_os_string()
     ];
 
     let output = Command::new("pandoc").args(args).output()?;
@@ -151,7 +148,7 @@ fn run_pandoc(path: &PathBuf, out_path: &PathBuf) -> Result<String, Box<dyn std:
             "pandoc failed (see stdout/stderr for details)".to_string(),
         )))
     } else {
-        Ok(fs::read_to_string(out_file)?)
+        Ok(String::from_utf8(output.stdout)?)
     }
 }
 
