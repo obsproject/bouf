@@ -26,7 +26,7 @@ jobs:
         run: |
           mkdir test\new
           mkdir test\out
-          wget https://github.com/obsproject/obs-studio/releases/download/28.0.0-beta1/OBS-Studio-28.0-beta1-Full-x64.zip -O new.zip
+          Invoke-WebRequest -Uri "https://github.com/obsproject/obs-studio/releases/download/28.0.0-beta1/OBS-Studio-28.0-beta1-Full-x64.zip" -OutFile "new.zip"
           7z x new.zip -otest/new
 
       - name: Build (Release)
