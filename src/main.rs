@@ -51,7 +51,7 @@ fn main() {
 
     // Create NSIS/ZIP
     if !args.skip_installer {
-        println!("[+] Running NSIS...");
+        println!("[+] Creating Installer");
         if let Err(e) = steps::package::run_nsis(&conf) {
             println!("[!] NSIS failed: {}", e);
             exit(1)

@@ -151,7 +151,6 @@ pub fn codesign(path: &PathBuf, opts: &CodesignOptions) -> Result<(), Box<dyn st
         }
         to_sign.push(file.path().canonicalize()?)
     }
-    println!("[+] Running signtool...");
     sign(to_sign, &opts)?;
 
     Ok(())

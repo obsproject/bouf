@@ -25,6 +25,7 @@ pub fn sign(files: Vec<PathBuf>, opts: &CodesignOptions) -> Result<(), Box<dyn s
         args.push(x.to_owned().into_os_string())
     }
 
+    println!(" => Running signtool...");
     let output = Command::new(signtool).args(args).output()?;
 
     if !output.status.success() {

@@ -38,6 +38,7 @@ pub fn run_nsis(conf: &Config) -> Result<(), Box<dyn std::error::Error>> {
         nsis_script.to_owned().into_os_string(),
     ];
 
+    println!(" => Running NSIS...");
     let output = Command::new(&conf.env.makensis_path)
         .current_dir(script_dir)
         .args(args)
