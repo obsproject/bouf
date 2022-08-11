@@ -108,4 +108,6 @@ fn main() {
             }
         }
     }
+
+    println!("*** Finished! ***");
 }
