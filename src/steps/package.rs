@@ -42,9 +42,7 @@ pub fn run_nsis(conf: &Config) -> Result<(), Box<dyn std::error::Error>> {
     ];
 
     println!(" => Running NSIS...");
-    let output = Command::new(&conf.env.makensis_path)
-        .args(args)
-        .output()?;
+    let output = Command::new(&conf.env.makensis_path).args(args).output()?;
 
     if !output.status.success() {
         println!("MakeNSIS returned non-success status: {}", output.status);
