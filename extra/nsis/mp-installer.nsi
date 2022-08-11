@@ -35,6 +35,9 @@ ManifestDPIAware true
 !include WinVer.nsh
 !include x64.nsh
 
+; Search for plugins in working directory
+!addplugindir .
+
 ; Main Install settings
 Name "${APPNAMEANDVERSION}"
 !ifdef INSTALL64
