@@ -46,7 +46,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: bouf_build
-          path: target/release
+          path: target/release/bouf*
 
   build:
     name: Run tests
