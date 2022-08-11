@@ -89,7 +89,8 @@ fn main() {
 
         if !conf.package.updater.skip_sign {
             println!("[+] Signing manifest...");
-            let key = utils::sign::load_key(Some(conf.package.updater.private_key));
+            // ToDO private key loading from config path
+            let key = utils::sign::load_key(args.private_key);
             if let Err(e) = key {
                 println!("[!] Loading singing key failed: {}", e);
                 exit(1)
