@@ -15,7 +15,7 @@ fn main() {
     let mut conf = Config::from_file(args.config.as_path());
     conf.apply_args(&args);
 
-    println!("[+] Verifying config valididty...");
+    println!("[+] Verifying config validity...");
     match conf.validate(true, true) {
         Ok(_) => println!("[+] Config Ok!"),
         Err(err) => {
