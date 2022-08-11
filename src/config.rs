@@ -236,7 +236,7 @@ impl Config {
 
         self.prepare.codesign.skip_sign = args.skip_codesigning;
         self.package.installer.skip_sign = args.skip_codesigning;
-        self.package.updater.skip_sign = !args.skip_manifest_signing;
+        self.package.updater.skip_sign = args.skip_manifest_signing;
 
         // Todo remaining args
     }
