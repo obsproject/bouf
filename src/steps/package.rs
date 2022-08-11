@@ -118,8 +118,8 @@ pub fn create_zips(conf: &Config) -> Result<(), Box<dyn std::error::Error>> {
     let zip_name = conf.package.zip.name.replace("{version}", &short_version);
     let pdb_zip_name = conf.package.zip.pdb_name.replace("{version}", &short_version);
 
-    let obs_path = conf.env.output_dir.join("install").canonicalize()?;
-    let pdb_path = conf.env.output_dir.join("pdbs").canonicalize()?;
+    let obs_path = conf.env.output_dir.join("install/*");
+    let pdb_path = conf.env.output_dir.join("pdbs/*");
     let obs_zip_path = conf.env.output_dir.join(zip_name);
     let pdb_zip_path = conf.env.output_dir.join(pdb_zip_name);
 
@@ -146,7 +146,7 @@ fn run_pandoc(path: &PathBuf, out_path: &PathBuf) -> Result<String, Box<dyn std:
     let output = Command::new("pandoc").args(args).output()?;
 
     if !output.status.success() {
-        println!("7-zip returned non-success status: {}", output.status);
+        println!("pandoc returned non-success status: {}", output.status);
         std::io::stdout().write_all(&output.stdout)?;
         std::io::stderr().write_all(&output.stderr)?;
         Err(Box::new(SomeError(
