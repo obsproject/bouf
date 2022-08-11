@@ -80,8 +80,26 @@ fn main() {
 
     // Sign manifest if it was created
     if let Some(mut manifest) = manifest {
-        // ToDo write vc redist hash, convert notes, write and sign manifest
+        println!("[+] Finalising manifest...");
+        let mf = steps::package::finalise_manifest(&conf, &mut manifest);
+        if let Err(e) = mf {
+            println!("[!] Finalising manifest failed: {}", e);
+            exit(1)
+        }
 
-        if !conf.package.updater.skip_sign {}
+        if !conf.package.updater.skip_sign {
+            println!("[+] Signing manifest...");
+            let key = utils::sign::load_key(Some(conf.package.updater.private_key));
+            if let Err(e) = key {
+                println!("[!] Loading singing key failed: {}", e);
+                exit(1)
+            }
+
+            let res = utils::sign::sign_file(&key.unwrap(), &mf.unwrap());
+            if let Err(e) = res {
+                println!("[!] Signing file failed: {}", e);
+                exit(1)
+            }
+        }
     }
 }
