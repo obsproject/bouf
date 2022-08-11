@@ -62,5 +62,5 @@ pdb_name = "OBS-Studio-{version}-pdbs.zip"
 
 [package.updater]
 private_key = "extra/ci/privatekey.pem"
-vc_redist_path = "extra/ci/nsis/VC_redist.x64.exe"
-notes_files = "extra/ci/notes_placeholder.rtf"
+vc_redist_path = "extra/nsis/VC_redist.x64.exe"
+notes_files = "extra/ci/notes_placeholder.rst"
