@@ -16,7 +16,7 @@ use crate::utils::misc;
 pub fn ensure_output_dir(out_path: &PathBuf, delete_old: bool) -> Result<(), Box<dyn std::error::Error>> {
     let out_path = misc::normalize_path(&out_path);
 
-    if !out_path.read_dir()?.next().is_none() {
+    if out_path.exists() && !out_path.read_dir()?.next().is_none() {
         if !delete_old {
             return Err(Box::new(errors::SomeError("Folder not empty".into())));
         }
