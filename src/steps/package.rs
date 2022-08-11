@@ -6,13 +6,11 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::result::Result;
 
-#[cfg(target_os = "windows")]
-use tugger_windows_codesign::{CodeSigningCertificate, SigntoolSign, SystemStore, TimestampServer};
-
 use serde_json;
 
 use crate::config::Config;
 use crate::steps::generate::Manifest;
+use crate::utils::codesign::sign;
 use crate::utils::errors::SomeError;
 use crate::utils::hash::hash_file;
 use crate::utils::misc;
@@ -74,13 +72,8 @@ pub fn sign_installer(config: &Config) -> Result<(), Box<dyn std::error::Error>>
     let path = config.env.output_dir.join(filename).canonicalize()?;
 
     println!("[+] Signing installer file \"{}\"", path.display());
-    let cert = CodeSigningCertificate::SubjectName(SystemStore::My, config.prepare.codesign.sign_name.to_owned());
-    let mut sign = SigntoolSign::new(cert);
-    sign.verbose()
-        .file_digest_algorithm(config.prepare.codesign.sign_digest.to_owned())
-        .timestamp_server(TimestampServer::Simple(config.prepare.codesign.sign_ts_serv.to_owned()))
-        .sign_file(path);
-    sign.run()?;
+    let files: Vec<PathBuf> = vec![path];
+    sign(files, &config.prepare.codesign)?;
 
     Ok(())
 }

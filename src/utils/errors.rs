@@ -13,3 +13,9 @@ impl fmt::Display for SomeError {
 }
 
 impl Error for SomeError {}
+
+impl From<String> for SomeError {
+    fn from(err: String) -> Self {
+        SomeError(err)
+    }
+}

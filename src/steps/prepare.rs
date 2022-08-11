@@ -1,16 +1,15 @@
 use std::ffi::OsStr;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::result::Result;
-
-#[cfg(target_os = "windows")]
-use tugger_windows_codesign::{CodeSigningCertificate, SigntoolSign, SystemStore, TimestampServer};
 
 use hashbrown::HashSet;
 use walkdir::{DirEntry, WalkDir};
 
 use crate::config::{CodesignOptions, CopyOptions, EnvOptions, StripPDBOptions};
+use crate::utils::codesign;
+use crate::utils::codesign::sign;
 use crate::utils::errors;
 use crate::utils::misc;
 
@@ -138,11 +137,7 @@ pub fn codesign(path: &PathBuf, opts: &CodesignOptions) -> Result<(), Box<dyn st
     let inp_path = misc::normalize_path(&path.join("install"));
 
     println!("[+] Signing files in \"{}\"", inp_path.display());
-    let cert = CodeSigningCertificate::SubjectName(SystemStore::My, opts.sign_name.to_owned());
-    let mut sign = SigntoolSign::new(cert);
-    sign.verbose()
-        .file_digest_algorithm(opts.sign_digest.to_owned())
-        .timestamp_server(TimestampServer::Simple(opts.sign_ts_serv.to_owned()));
+    let mut to_sign: Vec<PathBuf> = Vec::new();
 
     for file in WalkDir::new(&inp_path)
         .into_iter()
@@ -154,10 +149,10 @@ pub fn codesign(path: &PathBuf, opts: &CodesignOptions) -> Result<(), Box<dyn st
         if !opts.sign_exts.iter().find(|&x| relative_path.ends_with(x)).is_some() {
             continue;
         }
-        sign.sign_file(file.path().canonicalize()?);
+        to_sign.push(file.path().canonicalize()?)
     }
     println!("[+] Running signtool...");
-    sign.run();
+    sign(to_sign, &opts)?;
 
     Ok(())
 }
