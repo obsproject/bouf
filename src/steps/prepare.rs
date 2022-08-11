@@ -10,7 +10,7 @@ use tugger_windows_codesign::{CodeSigningCertificate, SigntoolSign, SystemStore,
 use hashbrown::HashSet;
 use walkdir::{DirEntry, WalkDir};
 
-use crate::config::{CodesignOptions, CopyOptions, StripPDBOptions};
+use crate::config::{CodesignOptions, CopyOptions, EnvOptions, StripPDBOptions};
 use crate::utils::errors;
 use crate::utils::misc;
 
@@ -21,7 +21,7 @@ pub fn ensure_output_dir(out_path: &PathBuf, delete_old: bool) -> Result<(), Box
         if !delete_old {
             return Err(Box::new(errors::SomeError("Folder not empty".into())));
         }
-        println!("Deleting previous output dir...");
+        println!("[!] Deleting previous output dir...");
         std::fs::remove_dir_all(&out_path);
     }
 
@@ -88,7 +88,7 @@ pub fn copy(in_path: &PathBuf, out_path: &PathBuf, opts: &CopyOptions) -> Result
 }
 
 // Move PDBs (except excluded) to separate dir, then strip remaining ones
-pub fn strip_pdbs(path: &PathBuf, opts: &StripPDBOptions) -> Result<(), Box<dyn std::error::Error>> {
+pub fn strip_pdbs(path: &PathBuf, opts: &StripPDBOptions, env: &EnvOptions) -> Result<(), Box<dyn std::error::Error>> {
     let inp_path = misc::normalize_path(&path.join("install"));
     let out_path = misc::normalize_path(&path.join("pdbs"));
 
@@ -121,7 +121,7 @@ pub fn strip_pdbs(path: &PathBuf, opts: &StripPDBOptions) -> Result<(), Box<dyn 
         fs::rename(file.path(), &new_path)?;
 
         // Finally, run PDBCopy
-        Command::new(&opts.pdbcopy_path)
+        Command::new(&env.pdbcopy_path)
             .args([new_path.as_os_str(), file.path().as_os_str(), OsStr::new("-p")])
             .output()
             .expect("failed to run pdbcopy");

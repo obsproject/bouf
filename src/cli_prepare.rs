@@ -65,5 +65,5 @@ fn main() {
     // Codesign files
     steps::prepare::codesign(&conf.env.output_dir, &conf.prepare.codesign);
     // Move/Strip PDBs
-    steps::prepare::strip_pdbs(&conf.env.output_dir, &conf.prepare.strip_pdbs);
+    steps::prepare::strip_pdbs(&conf.env.output_dir, &conf.prepare.strip_pdbs, &conf.env);
 }
