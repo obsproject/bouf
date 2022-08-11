@@ -1,0 +1,39 @@
+name: Test Update Building
+
+on:
+  workflow_dispatch:
+
+jobs:
+  bouf:
+    runs-on: windows-latest
+    name: Prepare release (without deltas)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+
+      - name: Install pandoc
+        run: choco install pandoc
+
+      - name: Build (Release)
+        run: cargo build -r
+
+      - name: Download and Extract build
+        run: |
+          mkdir test\new
+          mkdir test\out
+          wget https://github.com/obsproject/obs-studio/releases/download/28.0.0-beta1/OBS-Studio-28.0-beta1-Full-x64.zip -O new.zip
+          7z x new.zip -otest/new
+
+      - name: Create self-signed cert
+        run: New-SelfSignedCertificate -DnsName "OBS Test" -Type CodeSigning -KeyAlgorithm ECDSA_nistP256 -CertStoreLocation "Cert:\CurrentUser\My"
+
+      - name: Run bouf (no Deltas)
+        run: target/release/bouf -c extra/ci/config.toml --version 28.0.0-beta1 --new test/new --old test/old --out test/out --skip-patches --clear-output
+
+      - name: Upload results
+        uses: actions/upload-artifact@v3
+        with:
+          name: obs_distribution
+          path: test/out
