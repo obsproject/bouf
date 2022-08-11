@@ -72,7 +72,7 @@ pub fn normalize_path(path: &Path) -> PathBuf {
     ret
 }
 
-pub fn check_for_command(name: &str) -> Result<(), SomeError> {
+fn check_for_command(name: &str) -> Result<(), SomeError> {
     let mut child = Command::new(name);
 
     match child.spawn() {
