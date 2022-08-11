@@ -11,8 +11,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Update rust toolchain
+        run: rustup toolchain install stable --profile minimal
+
       - name: Restore Rust Cache
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
 
       - name: Build (Debug)
         run: cargo build
