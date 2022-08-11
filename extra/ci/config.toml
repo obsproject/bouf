@@ -1,0 +1,66 @@
+[env]
+# On CI these should be in %PATH%
+sevenzip_path = "7z"
+makensis_path = "makensis"
+pandoc_path = "pandoc"
+pdbcopy_path = "C:/Program Files (x86)/Windows Kits/10/Debuggers/x64/pdbcopy.exe"
+
+## Preparation steps
+[prepare]
+[prepare.codesign]
+sign_name = "OBS Test"
+sign_digest = "sha512"
+sign_ts_serv = "http://timestamp.digicert.com"
+sign_exts = ['exe', 'dll', 'pyd']
+
+[prepare.strip_pdbs]
+# PDBs to not strip
+exclude = [
+    "obs-frontend-api.pdb",
+    "obs64.pdb",
+    "obs.pdb",
+]
+
+## Delta patch generation
+[generate]
+[[generate.packages]]
+name = "obs-browser"
+include_files = [
+    "obs-browser",
+    "locales/",
+    "cef.pak",
+    "cef_100_percent.pak",
+    "cef_200_percent.pak",
+    "cef_extensions.pak",
+    "cef-bootstrap.exe",
+    "cef-bootstrap.pdb",
+    "obs-browser-page.exe",
+    "obs-browser-page.pdb",
+    "chrome_elf.dll",
+    "devtools_resources.pak",
+    "icudtl.dat",
+    "libcef.dll",
+    "libEGL.dll",
+    "libGLESv2.dll",
+    "natives_blob.bin",
+    "obs-browser.dll",
+    "obs-browser.pdb",
+    "snapshot_blob.bin",
+    "v8_context_snapshot.bin",
+]
+
+[[generate.packages]]
+name = "core"
+
+[package]
+[package.installer]
+nsis_script = "extra/nsis/mp-installer.nsi"
+
+[package.zip]
+name = "OBS-Studio-{version}.zip"
+pdb_name = "OBS-Studio-{version}-pdbs.zip"
+
+[package.updater]
+private_key = "extra/ci/privatekey.pem"
+vc_redist_path = "extra/ci/nsis/VC_redist.x64.exe"
+notes_files = "extra/ci/notes_placeholder.rtf"
