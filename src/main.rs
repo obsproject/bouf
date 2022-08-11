@@ -95,7 +95,7 @@ fn main() {
                 privkey = Some(conf.package.updater.private_key);
             } */
 
-            let key = utils::sign::load_key(None);
+            let key = utils::sign::load_key(Some(conf.package.updater.private_key));
             if let Err(e) = key {
                 println!("[!] Loading singing key failed: {}", e);
                 exit(1)
