@@ -4,9 +4,12 @@ on:
   push:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    name: Build
+  build_debug:
+    name: Build (Debug)
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -20,8 +23,44 @@ jobs:
       - name: Build (Debug)
         run: cargo build
 
+  build_release:
+    name: Build (Release)
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Update rust toolchain
+        run: rustup toolchain install stable --profile minimal
+
+      - name: Restore Rust Cache
+        uses: Swatinem/rust-cache@v2
+
       - name: Build (Release)
         run: cargo build -r
+
+      - name: Upload results
+        uses: actions/upload-artifact@v3
+        with:
+          name: bouf_build
+          path: target/release
+
+  build:
+    name: Run tests
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Update rust toolchain
+        run: rustup toolchain install stable --profile minimal
+
+      - name: Restore Rust Cache
+        uses: Swatinem/rust-cache@v2
 
       - name: Run Tests
         run: cargo test

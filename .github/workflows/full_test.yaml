@@ -22,18 +22,19 @@ jobs:
       - name: Install pandoc
         run: choco install pandoc
 
+      - name: Create self-signed cert
+        run: New-SelfSignedCertificate -DnsName "OBS Test" -Type CodeSigning -KeyAlgorithm ECDSA_nistP256 -CertStoreLocation "Cert:\CurrentUser\My"
+
       - name: Download and Extract build
         run: |
           mkdir test\new
           mkdir test\out
+          mkdir test\old
           Invoke-WebRequest -Uri "https://github.com/obsproject/obs-studio/releases/download/28.0.0-beta1/OBS-Studio-28.0-beta1-Full-x64.zip" -OutFile "new.zip"
           7z x new.zip -otest/new
 
       - name: Build (Release)
         run: cargo build -r
-
-      - name: Create self-signed cert
-        run: New-SelfSignedCertificate -DnsName "OBS Test" -Type CodeSigning -KeyAlgorithm ECDSA_nistP256 -CertStoreLocation "Cert:\CurrentUser\My"
 
       - name: Run bouf (no Deltas)
         run: target/release/bouf -c extra/ci/config.toml --version 28.0.0-beta1 --new test/new --old test/old --out test/out --skip-patches --clear-output
