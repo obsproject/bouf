@@ -49,9 +49,6 @@ rayon = "1.5.3"
 indicatif = { version = "0.17.0", features = ["rayon"] }
 hashbrown = { version = "0.12", features = ["rayon", "serde"] }
 
-# Codesigning on Windows uses a signtool wrapper
-# tugger is really overkill and has *tons* of dependencies.
-# There are other options, but unfortunately they're not as flexible.
-# For the time being, this will have to do.
+# Used to find signtool for codesigning
 [target.'cfg(windows)'.dependencies]
-tugger-windows-codesign = "0.8.0"
+winreg = "0.10.1"
