@@ -30,7 +30,7 @@ pub fn run_nsis(conf: &Config) -> Result<(), Box<dyn std::error::Error>> {
     let script_dir = nsis_script.parent().unwrap();
 
     let args: Vec<OsString> = vec![
-        "/NOCD".into(),
+        // "/NOCD".into(),
         format!("/DTAGVERSION={}", tag_version).into(),
         format!("/DAPPVERSION={}", new_version).into(),
         format!("/DSHORTVERSION={}", short_version).into(),
