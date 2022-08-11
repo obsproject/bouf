@@ -10,7 +10,7 @@ use sha2::{Digest, Sha512};
 use crate::utils::errors::SomeError;
 
 pub fn load_key(key_file: Option<PathBuf>) -> Result<RsaPrivateKey, Box<dyn std::error::Error>> {
-    let mut pem: String;
+    let pem: String;
 
     if let Some(_path) = key_file {
         pem = fs::read_to_string(_path)?;

@@ -71,19 +71,11 @@ fn build_hashlist_with_cache(path: &PathBuf) -> HashMap<String, utils::hash::Fil
 }
 
 pub fn create_patches(conf: &Config) -> Manifest {
-    // ToDo clear "out" directory
     // Convert directories to absolute paths
     let new_path = misc::normalize_path(&conf.env.input_dir);
     let old_path = misc::normalize_path(&conf.env.previous_dir);
     let out_path = misc::normalize_path(&conf.env.output_dir);
 
-    // Ensure directories exists
-    if !(new_path.exists() && new_path.is_dir()) {
-        panic!("Input path does not exist!")
-    };
-    if !(old_path.exists() && old_path.is_dir()) {
-        panic!("Previous versions path does not exist!")
-    };
     std::fs::create_dir_all(&out_path).expect("Failed to create output directory");
 
     println!("[+] Building hash list for new build");
@@ -91,8 +83,6 @@ pub fn create_patches(conf: &Config) -> Manifest {
     println!("[+] Building hash list for old builds");
     let old_hashes = build_hashlist_with_cache(&old_path);
     println!("[+] Determining number of patches to create...");
-
-    // Todo overrides / ignore list (note: this should be in the "prepare" step)
 
     // List of all unique patches to generate as old hash => new file
     let mut patch_list: HashMap<String, String> = HashMap::new();
