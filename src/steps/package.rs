@@ -1,4 +1,5 @@
 use std::ffi::OsString;
+use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
@@ -134,12 +135,41 @@ pub fn create_zips(conf: &Config) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+fn run_pandoc(path: &PathBuf, out_path: &PathBuf) -> Result<String, Box<dyn std::error::Error>> {
+    let out_file = out_path.join("notes.html");
+
+    let args: Vec<OsString> = vec![
+        "--from".into(),
+        "markdown".into(),
+        "--to".into(),
+        "html".into(),
+        path.to_owned().into_os_string(),
+        out_file.to_owned().into_os_string(),
+    ];
+
+    let output = Command::new("pandoc").args(args).output()?;
+
+    if !output.status.success() {
+        println!("7-zip returned non-success status: {}", output.status);
+        std::io::stdout().write_all(&output.stdout)?;
+        std::io::stderr().write_all(&output.stderr)?;
+        Err(Box::new(SomeError(
+            "pandoc failed (see stdout/stderr for details)".to_string(),
+        )))
+    } else {
+        Ok(fs::read_to_string(out_file)?)
+    }
+}
+
 pub fn finalise_manifest(conf: &Config, manifest: &mut Manifest) -> Result<PathBuf, Box<dyn std::error::Error>> {
     let manifest_filename = format!("manifest_{}.json", conf.env.branch);
     let manifest_file = conf.env.output_dir.join(manifest_filename);
 
+    // Add VC hash
     let hash = hash_file(&conf.package.updater.vc_redist_path);
     manifest.vc2019_redist_x64 = hash.hash;
+    // Add notes
+    manifest.notes = run_pandoc(&conf.package.updater.notes_files, &conf.env.output_dir)?;
 
     let json_str = serde_json::to_string_pretty(&manifest)?;
     let mut f = File::create(manifest_file.as_path())?;
