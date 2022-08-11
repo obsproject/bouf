@@ -30,12 +30,14 @@ The generated output has the following structure:
 
 May not be up to date, use `bouf.exe -h` to see full help.
 
-**Note:** A valid configuration file based on `config.example.toml` is required.
+**Note:** A valid configuration file based on `config.example.toml` is required (see `extra/ci` for an example).
 
 Some parameters can be set via environment variables (e.g. secrets):
 - `UPDATER_PRIVATE_KEY` - updater signing key (PEM, encoded as base64)
 
 ## ToDo
 
-- Packaging
 - Figure out a license
+- Cleanup, bugfixes, rewrites...
+  + See "ToDo"s in source code and `rustc` warnings (it angry)
+- Also probably more tests.
