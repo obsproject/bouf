@@ -135,7 +135,7 @@ fn run_pandoc(path: &PathBuf, out_path: &PathBuf) -> Result<String, Box<dyn std:
         "markdown".into(),
         "--to".into(),
         "html".into(),
-        path.to_owned().into_os_string()
+        path.to_owned().into_os_string(),
     ];
 
     let output = Command::new("pandoc").args(args).output()?;
