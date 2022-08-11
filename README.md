@@ -8,7 +8,7 @@ Additionally, various steps and utilities are provided as separate binaries:
 
 * `bouf-prep` - Prepares install directory, handles codesigning and PDB stripping
 * `bouf-buildpatches` - Creates patch files and manifest for use with OBS updater
-* `bouf-pack` - Packages the prepared install into ZIP and NSIS installer, and finalises/signs the manifest
+* (unfinished) `bouf-pack` - Packages the prepared install into ZIP and NSIS installer, and finalises/signs the manifest
 * `bouf-sign` - Standalone utility to sign files verified by the OBS updater (manifest, updater.exe, whatsnew, branches, etc.)
 
 The generated output has the following structure:
@@ -26,16 +26,16 @@ The generated output has the following structure:
 
 ## Usage:
 
-`bouf.exe --config <config.toml> --version <verrsion> --input C:/obs/build/output [--beta <num> / --rc <num>] [--skip-patches] [--skip-installer] [--branch <stable/nightly/beta>] [--notes <path/to/notes.rtf>]`
+`bouf.exe --config <config.toml> --version <version> [--beta <num> / --rc <num>] --new C:/obs/repo/build/output --old C:/obs/releases/old --out C:/obs/releases/new [--skip-patches] [--skip-installer] [--branch <stable/nightly/beta>] [--notes-file <path/to/notes.rtf>] [--private-key <path/to/privkey.pem>]`
+
+May not be up to date, use `bouf.exe -h` to see full help.
 
 **Note:** A valid configuration file based on `config.example.toml` is required.
 
 Some parameters can be set via environment variables (e.g. secrets):
-- `UPDATER_PRIVATE_KEY` - updater signing key (PEM or DER, encoded as base64)
+- `UPDATER_PRIVATE_KEY` - updater signing key (PEM, encoded as base64)
 
 ## ToDo
 
 - Packaging
-- Signing manifest/updater
 - Figure out a license
-- 
