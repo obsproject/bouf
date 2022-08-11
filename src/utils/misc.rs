@@ -72,6 +72,22 @@ pub fn normalize_path(path: &Path) -> PathBuf {
     ret
 }
 
+/// Attempt to create canonical path
+pub fn recursive_canonicalize(path: &PathBuf) -> PathBuf {
+    let mut canon = PathBuf::new();
+
+    for component in path.components() {
+        // As long as component is canonizable, just replace it, afterward push the components
+        if let Ok(_canon) = fs::canonicalize(component) {
+            canon = _canon;
+        } else {
+            canon.push(component);
+        }
+    }
+
+    canon
+}
+
 fn check_for_command(name: &str) -> Result<(), SomeError> {
     let mut child = Command::new(name);
 

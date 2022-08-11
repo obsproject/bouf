@@ -272,7 +272,9 @@ impl Config {
                 Ok(res) => self.env.previous_dir = res,
                 Err(e) => return Err(SomeError(format!("Previous dir error: {}", e))),
             }
-            // Check other files (nsis script, updater, vcredist)
+            // This function will just return the original path if it doesn't succeed.
+            self.env.output_dir = misc::recursive_canonicalize(&self.env.output_dir);
+            // ToDo Check other files (nsis script, updater, vcredist)
         }
 
         Ok(())
