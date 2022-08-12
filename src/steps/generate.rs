@@ -11,8 +11,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Map;
 
 use crate::utils;
-use crate::utils::misc;
 use crate::utils::config::Config;
+use crate::utils::misc;
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct Manifest {

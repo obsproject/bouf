@@ -6,9 +6,9 @@ mod utils;
 
 use clap::Parser;
 
+use crate::steps::generate::Manifest;
 use crate::utils::args::MainArgs;
 use crate::utils::config::Config;
-use crate::steps::generate::Manifest;
 
 fn main() {
     let args: MainArgs = MainArgs::parse();

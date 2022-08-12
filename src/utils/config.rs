@@ -8,7 +8,6 @@ use crate::utils::args::MainArgs;
 use crate::utils::errors::SomeError;
 use crate::utils::misc;
 
-
 fn get_default_branch() -> String {
     String::from("stable")
 }
