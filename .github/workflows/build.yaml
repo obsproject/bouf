@@ -47,7 +47,7 @@ jobs:
       - name: Upload results
         uses: actions/upload-artifact@v3
         with:
-          name: bouf_build
+          name: bouf-build-${{ matrix.os }}
           path: target/release/bouf*
 
   build:
