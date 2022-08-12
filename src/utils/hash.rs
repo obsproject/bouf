@@ -95,7 +95,9 @@ pub fn get_dir_hashes(path: &PathBuf, cache: Option<HashMap<String, FileInfo>>) 
     let num = hashes.iter().filter(|(_, v)| v.hash.is_empty()).count() as u64;
 
     if num == 0 {
-        println!(" => All file hashes loaded from cache.");
+        if cache.is_some() {
+            println!(" => All file hashes loaded from cache.");
+        }
         return hashes;
     }
 
