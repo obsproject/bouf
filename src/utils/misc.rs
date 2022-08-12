@@ -2,7 +2,7 @@ use std::fs;
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 
-use crate::config::ObsVersion;
+use crate::utils::config::ObsVersion;
 use crate::utils::errors::SomeError;
 
 pub fn parse_version(version_string: &String) -> (u8, u8, u8, u8, u8) {

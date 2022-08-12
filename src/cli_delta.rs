@@ -7,7 +7,6 @@ use std::path::{Path, PathBuf};
 
 use clap::Parser;
 
-mod config;
 mod steps;
 mod utils;
 
@@ -42,7 +41,7 @@ struct Args {
 fn main() {
     let args: Args = Args::parse();
 
-    let mut conf = config::Config::from_file(args.config.as_path());
+    let mut conf = utils::config::Config::from_file(args.config.as_path());
     conf.set_version(
         &args.version,
         args.beta.unwrap_or_default(),

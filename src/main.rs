@@ -1,13 +1,13 @@
 use std::path::PathBuf;
 use std::process::exit;
 
-mod config;
 mod steps;
 mod utils;
 
 use clap::Parser;
 
-use crate::config::{Config, MainArgs};
+use crate::utils::args::MainArgs;
+use crate::utils::config::Config;
 use crate::steps::generate::Manifest;
 
 fn main() {

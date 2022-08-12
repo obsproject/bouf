@@ -8,9 +8,9 @@ use std::result::Result;
 
 use serde_json;
 
-use crate::config::Config;
 use crate::steps::generate::Manifest;
 use crate::utils::codesign::sign;
+use crate::utils::config::Config;
 use crate::utils::errors::SomeError;
 use crate::utils::hash::hash_file;
 use crate::utils::misc;

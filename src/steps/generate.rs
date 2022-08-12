@@ -13,6 +13,7 @@ use serde_json::Map;
 use crate::config::Config;
 use crate::utils;
 use crate::utils::misc;
+use crate::utils::config::Config;
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct Manifest {

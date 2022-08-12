@@ -7,7 +7,7 @@ use std::result::Result;
 use hashbrown::HashSet;
 use walkdir::{DirEntry, WalkDir};
 
-use crate::config::{CodesignOptions, CopyOptions, EnvOptions, StripPDBOptions};
+use crate::utils::config::{CodesignOptions, CopyOptions, EnvOptions, StripPDBOptions};
 use crate::utils::codesign;
 use crate::utils::codesign::sign;
 use crate::utils::errors;

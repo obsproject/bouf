@@ -3,7 +3,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use crate::config::CodesignOptions;
+use crate::utils::config::CodesignOptions;
 use crate::utils::errors::SomeError;
 
 #[cfg(target_os = "windows")]

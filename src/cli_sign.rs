@@ -4,9 +4,8 @@ use std::path::{Path, PathBuf};
 
 use clap::Parser;
 
-mod config;
 mod utils;
-use crate::config::Config;
+use crate::utils::config::Config;
 
 #[derive(Parser, Debug)]
 #[clap(about, long_about = None)]
