@@ -5,12 +5,11 @@ use std::io::Write;
 use std::path::PathBuf;
 
 use hashbrown::{HashMap, HashSet};
-use indicatif::{ParallelProgressIterator, ProgressBar, ProgressFinish, ProgressStyle};
+use indicatif::{ParallelProgressIterator, ProgressBar, ProgressFinish, ProgressIterator, ProgressStyle};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use serde_json::Map;
 
-use crate::config::Config;
 use crate::utils;
 use crate::utils::misc;
 use crate::utils::config::Config;
@@ -189,15 +188,20 @@ pub fn create_patches(conf: &Config) -> Manifest {
         };
     });
 
-    println!("[+] Creating delta-patches...");
+    // Separate out files that are not going to be bsdiff'd in parallel
+    let patch_list_st: HashMap<String, String> = patch_list
+        .drain_filter(|_, f| conf.generate.exclude_from_parallel.iter().any(|s| f.contains(s)))
+        .collect();
+
     let num = patch_list.len() as u64;
     let style = ProgressStyle::with_template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}").unwrap();
     let pbar = ProgressBar::new(num)
         .with_style(style.clone())
         .with_finish(ProgressFinish::AndLeave);
 
+    let branch = &conf.env.branch;
+    println!("[+] Creating delta-patches...");
     patch_list.par_iter().progress_with(pbar).for_each(|(hash, filename)| {
-        let branch = &conf.env.branch;
         let package: &String = package_map.get(filename).unwrap();
         let patch_filename = format!("updater/patches_studio/{branch}/{package}/{filename}/{hash}");
         // Create proper PathBufs from the format we created
@@ -208,6 +212,27 @@ pub fn create_patches(conf: &Config) -> Manifest {
         fs::create_dir_all(outfile.parent().unwrap()).expect("Failed creating folder!");
         utils::bsdiff::create_patch(&oldfile, &newfile, &outfile).expect("Creating hash failed horribly.");
     });
+
+    // If any patches were assigned to the non-parallel patch list run them here
+    if patch_list_st.len() > 0 {
+        let num = patch_list_st.len() as u64;
+        let pbar = ProgressBar::new(num)
+            .with_style(style.clone())
+            .with_finish(ProgressFinish::AndLeave);
+
+        println!("[+] Creating non-parallel delta-patches...");
+        patch_list_st.iter().progress_with(pbar).for_each(|(hash, filename)| {
+            let package: &String = package_map.get(filename).unwrap();
+            let patch_filename = format!("updater/patches_studio/{branch}/{package}/{filename}/{hash}");
+            // Create proper PathBufs from the format we created
+            let outfile = out_path.join(patch_filename);
+            let oldfile = old_path.join(hash_to_file.get(hash).unwrap());
+            let newfile = new_path.join(&filename);
+            // Ensure directories exist (Note: this is thread-safe in Rust!)
+            fs::create_dir_all(outfile.parent().unwrap()).expect("Failed creating folder!");
+            utils::bsdiff::create_patch(&oldfile, &newfile, &outfile).expect("Creating hash failed horribly.");
+        });
+    }
 
     println!("[+] Copying new build to updater structure...");
     let pbar = ProgressBar::new(new_hashes.len() as u64)

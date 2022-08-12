@@ -86,6 +86,7 @@ pub struct StripPDBOptions {
 pub struct GenerationOptions {
     // patch_type: String,
     pub removed_files: Vec<String>,
+    pub exclude_from_parallel: Vec<String>,
     pub packages: Vec<ManifestPackageOptions>,
 }
 

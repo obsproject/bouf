@@ -50,6 +50,9 @@ exclude = [
 # Maybe in the future there will be more!
 # patch_type = "bsdiff_lzma"
 
+# Files matching these patterns will not be processed in parallel to reduce RAM usage
+exclude_from_parallel = []
+
 # Removed files are detected automatically, but if the removal cannot be detected automatically,
 # e.g. because the affected old version is no longer used in generating patches, specify them here.
 # Note: this will be added to the corresponding package based on the include filter!
