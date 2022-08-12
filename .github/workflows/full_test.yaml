@@ -49,4 +49,9 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: obs_distribution
-          path: test/out
+          path: |
+            test/out/*.exe
+            test/out/*.zip
+            test/out/*.json
+            test/out/*.sig
+            test/out/*.txt
