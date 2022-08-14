@@ -42,7 +42,7 @@ fn main() {
     // Create deltas and manifest
     let mut manifest: Option<Manifest> = None;
     if !args.skip_patches {
-        println!("[+] Creating delta patches...");
+        println!("[+] Running Delta Patch Generator...");
         manifest = Some(steps::generate::create_patches(&conf));
     } else {
         println!("[*] Skipping delta patch generation...");
