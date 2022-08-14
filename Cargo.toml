@@ -10,22 +10,10 @@ autobins = false
 name = "bouf"
 path = "src/main.rs"
 
-# Standalone utilities for single steps
-[[bin]]
-name = "bouf-prep"
-path = "src/cli_prepare.rs"
-
-[[bin]]
-name = "bouf-buildpatches"
-path = "src/cli_delta.rs"
-
-[[bin]]
-name = "bouf-pack"
-path = "src/cli_package.rs"
-
+# Standalone utility just for the signing
 [[bin]]
 name = "bouf-sign"
-path = "src/cli_sign.rs"
+path = "src/sign.rs"
 
 [dependencies]
 # general

@@ -1,11 +1,10 @@
 #![allow(dead_code)]
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use clap::Parser;
 
 mod utils;
-use crate::utils::config::Config;
 
 #[derive(Parser, Debug)]
 #[clap(about, long_about = None)]

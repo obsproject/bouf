@@ -4,12 +4,7 @@
 
 The main binary `bouf` automates the entire process based on the rules laid out in the config file and command line.
 
-Additionally, various steps and utilities are provided as separate binaries:
-
-* `bouf-prep` - Prepares install directory, handles codesigning and PDB stripping
-* `bouf-buildpatches` - Creates patch files and manifest for use with OBS updater
-* (unfinished) `bouf-pack` - Packages the prepared install into ZIP and NSIS installer, and finalises/signs the manifest
-* `bouf-sign` - Standalone utility to sign files verified by the OBS updater (manifest, updater.exe, whatsnew, branches, etc.)
+Additionally, the `bouf-sign` utility is provided to sign files verified by the OBS updater (manifest, updater.exe, whatsnew, branches, etc.)
 
 The generated output has the following structure:
 

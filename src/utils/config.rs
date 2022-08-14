@@ -148,18 +148,6 @@ impl Config {
         self.obs_version.rc = if rc_num > 0 { rc_num } else { ver_parsed.4 };
     }
 
-    pub fn set_dirs(&mut self, input: Option<PathBuf>, output: Option<PathBuf>, previous: Option<PathBuf>) {
-        if let Some(input) = input {
-            self.env.input_dir = input;
-        }
-        if let Some(output) = output {
-            self.env.output_dir = output;
-        }
-        if let Some(previous) = previous {
-            self.env.previous_dir = previous;
-        }
-    }
-
     pub fn apply_args(&mut self, args: &MainArgs) {
         self.set_version(
             &args.version,
