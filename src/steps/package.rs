@@ -1,5 +1,4 @@
 use std::ffi::OsString;
-use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
@@ -129,7 +128,7 @@ pub fn create_zips(conf: &Config) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn run_pandoc(path: &PathBuf, out_path: &PathBuf) -> Result<String, Box<dyn std::error::Error>> {
+fn run_pandoc(path: &PathBuf) -> Result<String, Box<dyn std::error::Error>> {
     let args: Vec<OsString> = vec![
         "--from".into(),
         "markdown".into(),
@@ -160,7 +159,7 @@ pub fn finalise_manifest(conf: &Config, manifest: &mut Manifest) -> Result<PathB
     let hash = hash_file(&conf.package.updater.vc_redist_path);
     manifest.vc2019_redist_x64 = hash.hash;
     // Add notes
-    manifest.notes = run_pandoc(&conf.package.updater.notes_files, &conf.env.output_dir)?;
+    manifest.notes = run_pandoc(&conf.package.updater.notes_files)?;
 
     let json_str = serde_json::to_string_pretty(&manifest)?;
     let mut f = File::create(manifest_file.as_path())?;

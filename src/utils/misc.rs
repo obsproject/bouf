@@ -94,7 +94,7 @@ fn check_for_command(name: &str) -> Result<(), SomeError> {
     let mut child = Command::new(name);
 
     match child.spawn() {
-        Ok(mut s) => s.kill(),
+        Ok(mut s) => s.kill().expect("Could not kill spawned process"),
         Err(e) => {
             let msg = format!("Failed to find \"{}\" command: {} ({})", name, e, e.kind());
             return Err(SomeError(msg));

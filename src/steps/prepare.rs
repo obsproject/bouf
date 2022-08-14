@@ -1,13 +1,12 @@
 use std::ffi::OsStr;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::Command;
 use std::result::Result;
 
 use hashbrown::HashSet;
 use walkdir::{DirEntry, WalkDir};
 
-use crate::utils::codesign;
 use crate::utils::codesign::sign;
 use crate::utils::config::{CodesignOptions, CopyOptions, EnvOptions, StripPDBOptions};
 use crate::utils::errors;
@@ -21,7 +20,7 @@ pub fn ensure_output_dir(out_path: &PathBuf, delete_old: bool) -> Result<(), Box
             return Err(Box::new(errors::SomeError("Folder not empty".into())));
         }
         println!("[!] Deleting previous output dir...");
-        std::fs::remove_dir_all(&out_path);
+        std::fs::remove_dir_all(&out_path)?;
     }
 
     std::fs::create_dir_all(&out_path)?;
@@ -59,7 +58,7 @@ pub fn copy(in_path: &PathBuf, out_path: &PathBuf, opts: &CopyOptions) -> Result
             continue;
         }
         // Check relative path against excludes
-        if opts.excludes.iter().find(|&x| relative_path_str.contains(x)).is_some() {
+        if opts.excludes.iter().any(|x| relative_path_str.contains(x)) {
             continue;
         }
         let file_path = out_path.join(relative_path);
@@ -71,17 +70,17 @@ pub fn copy(in_path: &PathBuf, out_path: &PathBuf, opts: &CopyOptions) -> Result
     }
 
     // Copy override files over
-    opts.overrides.iter().for_each(|(ins_path, src_path)| {
-        if !fs::metadata(src_path).is_ok() {
-            panic!("Override file \"{}\" does not exist!", src_path)
+    for (ins_path, ovr_path) in &opts.overrides {
+        if !fs::metadata(ovr_path).is_ok() {
+            panic!("Override file \"{}\" does not exist!", ovr_path)
         }
 
         let full_path = out_path.join(ins_path);
         if let Some(_parent) = full_path.parent() {
-            fs::create_dir_all(_parent);
+            fs::create_dir_all(_parent)?;
         }
-        fs::copy(src_path, full_path);
-    });
+        fs::copy(ovr_path, full_path)?;
+    }
 
     Ok(())
 }
@@ -114,7 +113,7 @@ pub fn strip_pdbs(path: &PathBuf, opts: &StripPDBOptions, env: &EnvOptions) -> R
         }
 
         if opts.exclude.iter().find(|&x| relative_path_str.contains(x)).is_some() {
-            fs::copy(file.path(), &new_path);
+            fs::copy(file.path(), &new_path)?;
             continue;
         }
         fs::rename(file.path(), &new_path)?;

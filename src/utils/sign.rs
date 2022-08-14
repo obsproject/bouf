@@ -1,13 +1,9 @@
-use std::fmt::format;
 use std::path::PathBuf;
 use std::{env, fs};
 
-use base64::decode;
 use rsa::Hash::SHA2_512;
 use rsa::{pkcs8::DecodePrivateKey, PaddingScheme, RsaPrivateKey};
-use sha2::{Digest, Sha512};
-
-use crate::utils::errors::SomeError;
+use sha2::Digest;
 
 pub fn load_key(key_file: Option<PathBuf>) -> Result<RsaPrivateKey, Box<dyn std::error::Error>> {
     let pem: String;
