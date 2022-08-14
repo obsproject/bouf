@@ -25,7 +25,7 @@ The generated output has the following structure:
 
 May not be up to date, use `bouf.exe -h` to see full help.
 
-**Note:** A valid configuration file based on `config.example.toml` is required (see `extra/ci` for an example).
+**Note:** A valid configuration file based on `extra/config.example.toml` is required (see `extra/ci` for an example).
 
 Some parameters can be set via environment variables (e.g. secrets):
 - `UPDATER_PRIVATE_KEY` - updater signing key (PEM, encoded as base64)
