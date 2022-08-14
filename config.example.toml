@@ -50,6 +50,13 @@ exclude = [
 # Maybe in the future there will be more!
 # patch_type = "bsdiff_lzma"
 
+# eclude files matching these patterns from being removed automatically
+# (e.g. legacy plugins no longer shipped with OBS but aren't broken yet)
+exclude_from_removal = [
+    "bin/32bit",
+    "obs-plugins/32bit",
+]
+
 # Files matching these patterns will not be processed in parallel to reduce RAM usage
 exclude_from_parallel = []
 
