@@ -8,7 +8,6 @@ use hashbrown::{HashMap, HashSet};
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressFinish, ProgressIterator, ProgressStyle};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
-use serde_json::Map;
 
 use crate::utils;
 use crate::utils::config::Config;
@@ -43,6 +42,15 @@ pub struct FileEntry {
     pub size: u64,
 }
 
+struct Patch {
+    hash: String,
+    name: String,
+    old_file: PathBuf,
+    new_file: PathBuf,
+}
+
+/// Create a list of file hashes in a directory, loading existing results from a
+/// "cache.json" file inside that directory (if it exists)
 fn build_hashlist_with_cache(path: &PathBuf) -> HashMap<String, utils::hash::FileInfo> {
     let cache_file = path.join("cache.json");
 
@@ -70,6 +78,15 @@ fn build_hashlist_with_cache(path: &PathBuf) -> HashMap<String, utils::hash::Fil
     hashes
 }
 
+/// Write text file, logging but ultimately ignoring errors
+fn write_file_unchecked(filename: PathBuf, contents: String) {
+    if let Ok(mut f) = File::create(&filename) {
+        if let Err(e) = f.write_all(contents.as_bytes()) {
+            println!("Writing {} failed: {}", filename.display(), e);
+        }
+    }
+}
+
 pub fn create_patches(conf: &Config) -> Manifest {
     // Convert directories to absolute paths
     let new_path = misc::normalize_path(&conf.env.input_dir);
@@ -85,132 +102,126 @@ pub fn create_patches(conf: &Config) -> Manifest {
     println!("[+] Determining number of patches to create...");
 
     // List of all unique patches to generate as old hash => new file
-    let mut patch_list: HashMap<String, String> = HashMap::new();
-    // Just used for logging
+    let mut patch_list: Vec<Patch> = Vec::new();
+    // Sets of added/new files as well as removed/seen ones for processing
     let mut added_files: HashSet<String> = new_hashes.keys().cloned().collect();
-    let mut changed_files: HashSet<String> = HashSet::new();
+    let new_files: HashSet<String> = added_files.clone();
     let mut removed_files: HashSet<String> = HashSet::new();
-    // Used for lookups during generation
-    let mut hash_to_file = HashMap::new();
+    let mut seen_hashes: HashSet<(String, String)> = HashSet::new();
+    // Just used for logging
+    let mut changed_files: HashSet<String> = HashSet::new();
 
     for (path, fileinfo) in old_hashes {
+        // Strip version (first folder name) from path
         let mut rel_path = path[path.find("/").unwrap_or(0) + 1..].to_owned();
-        // For backwards-compatibility we remove core and obs-browser package prefixes
+        // For backwards-compatibility: Remove "core/" and "obs-browser/" package prefixes in filenames
         if rel_path.starts_with("core") || rel_path.starts_with("obs-browser") {
             rel_path = rel_path[rel_path.find("/").unwrap_or(0) + 1..].parse().unwrap();
         }
-
-        // If the file was removed, skip it, otherwise remove it from the unique added file list
-        if !new_hashes.contains_key(&rel_path) {
-            removed_files.insert(rel_path);
+        let seen_key = (fileinfo.hash.to_owned(), rel_path.to_owned());
+        // Skip (hash, filename) pairs we already added to the patch list
+        if seen_hashes.contains(&seen_key) {
+            continue;
+        } else if !new_hashes.contains_key(&rel_path) {
+            // Only add files to removed that do not match any exclusion filter
+            if !conf.generate.exclude_from_removal.iter().any(|s| rel_path.contains(s)) {
+                removed_files.insert(rel_path);
+            }
             continue;
         } else {
             added_files.remove(&rel_path);
             changed_files.insert(rel_path.clone());
         }
 
-        // Technically this will overwrite existing keys, but that doesn't matter
-        hash_to_file.insert(fileinfo.hash.clone(), path.clone());
-        patch_list.insert(fileinfo.hash.clone(), rel_path);
+        patch_list.push(Patch {
+            hash: fileinfo.hash.clone(),
+            name: rel_path.clone(),
+            old_file: old_path.join(path),
+            new_file: new_path.join(rel_path),
+        });
+
+        seen_hashes.insert(seen_key);
     }
 
-    // Add manually specified deleted files as well
-    conf.generate.removed_files.iter().for_each(|f| {
-        removed_files.insert(f.to_owned());
-    });
+    // Add removed files from config as well to allow deleting additional files
+    // which may no longer be present in versions in the "old" directory.
+    removed_files.extend(conf.generate.removed_files.iter().cloned());
 
+    // Convert to Vec for sorting/saving to disk
     let mut added_files_list = added_files.into_iter().collect::<Vec<_>>();
-    added_files_list.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
     let mut removed_files_list = removed_files.clone().into_iter().collect::<Vec<_>>();
-    removed_files_list.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
     let mut changed_files_list = changed_files.into_iter().collect::<Vec<_>>();
+    added_files_list.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
+    removed_files_list.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
     changed_files_list.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
-
-    // Blame rustfmt for this mess.
-    println!("    -   Added : {} (see added.txt for details)", added_files_list.len());
-    println!(
-        "    - Changed : {} (see changed.txt for details)",
-        changed_files_list.len()
-    );
-    println!(
-        "    - Removed : {} (see removed.txt for details)",
-        removed_files_list.len()
-    );
+    write_file_unchecked(out_path.join("added.txt"), added_files_list.join("\n"));
+    write_file_unchecked(out_path.join("changed.txt"), changed_files_list.join("\n"));
+    write_file_unchecked(out_path.join("removed.txt"), removed_files_list.join("\n"));
+    println!("    -   Added : {} (see added.txt)", added_files_list.len());
+    println!("    - Changed : {} (see changed.txt)", changed_files_list.len());
+    println!("    - Removed : {} (see removed.txt)", removed_files_list.len());
     println!("    - Patches : {}", patch_list.len());
 
-    File::create(out_path.join("added.txt"))
-        .unwrap()
-        .write_all(added_files_list.join("\n").as_bytes());
-    File::create(out_path.join("changed.txt"))
-        .unwrap()
-        .write_all(changed_files_list.join("\n").as_bytes());
-    File::create(out_path.join("removed.txt"))
-        .unwrap()
-        .write_all(removed_files_list.join("\n").as_bytes());
-
-    // Debug shit
-    let test: Map<String, serde_json::Value> = Map::from_iter(
-        new_hashes
-            .iter()
-            .map(|(p, h)| (p.clone(), serde_json::to_value(h).unwrap())),
-    );
-    let serialized = serde_json::to_string_pretty(&test).unwrap();
-    File::create("test.json").unwrap().write_all(&serialized.as_bytes());
-
-    // Map current/removed files to packages
-    let mut all_files: HashSet<String> = new_hashes.keys().cloned().collect();
-    all_files.extend(removed_files);
-
-    let mut pattern_package: Vec<(String, &String)> = Vec::new();
-    let mut fallback: &String = &String::new();
-    let mut package_map: HashMap<&String, &String> = HashMap::new();
-
+    // This is a simple list we use to sort files into packages containing (pattern, package name) tuples
+    let mut pattern_list: Vec<(&String, &String)> = Vec::new();
+    // If a file matches no pattern, we use the first package without rules as the fallback.
+    // The config validator ensures this exists, but we have to initialise the value to something,
+    // so use the last entry.
+    let mut default_pkg: &String = &conf.generate.packages.last().unwrap().name;
     for package in &conf.generate.packages {
-        if let Some(_filter) = &package.include_files {
-            _filter.iter().for_each(|f| {
-                pattern_package.push((f.to_lowercase(), &package.name));
-            })
-        } else if fallback.is_empty() {
-            fallback = &package.name;
+        match &package.include_files {
+            Some(patterns) => {
+                for pattern in patterns {
+                    pattern_list.push((pattern, &package.name));
+                }
+            }
+            None => {
+                default_pkg = &package.name;
+                break;
+            }
         }
     }
 
-    // Iterate over all files, assigning them to packages as needed
-    all_files.iter().for_each(|fname| {
-        let fname_lower = fname.to_lowercase();
+    // Map current/removed files to packages in filename -> package name map.
+    // (we will look up the same filename multiple times, so precomputing this is probably more efficient!)
+    let mut package_map: HashMap<&String, &String> = HashMap::new();
+    for filename in new_files.union(&removed_files) {
+        if let Some((_, pkg_name)) = pattern_list.iter().find(|(pattern, _)| filename.contains(&**pattern)) {
+            package_map.insert(&filename, &pkg_name);
+        }
+    }
 
-        match pattern_package
-            .iter()
-            .find(|(pattern, _)| fname_lower.contains(pattern))
-        {
-            Some((_, branch)) => package_map.insert(fname, branch),
-            None => package_map.insert(fname, fallback),
-        };
-    });
-
-    // Separate out files that are not going to be bsdiff'd in parallel
-    let patch_list_st: HashMap<String, String> = patch_list
-        .drain_filter(|_, f| conf.generate.exclude_from_parallel.iter().any(|s| f.contains(s)))
+    // Patches to generate in single-threaded mode (e.g. CEF on CI)
+    let patch_list_st: Vec<&Patch> = patch_list
+        .iter()
+        .filter(|p| conf.generate.exclude_from_parallel.iter().any(|s| p.name.contains(s)))
+        .collect();
+    // Patches to generate in multi-threaded mode (yay rayon)
+    let patch_list_mt: Vec<&Patch> = patch_list
+        .iter()
+        .filter(|p| !conf.generate.exclude_from_parallel.iter().any(|s| p.name.contains(s)))
         .collect();
 
-    let num = patch_list.len() as u64;
+    // we will re-use these for all following loops
+    let branch = &conf.env.branch;
     let style = ProgressStyle::with_template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}").unwrap();
+
+    println!("[+] Creating delta-patches...");
+    let num = patch_list_mt.len() as u64;
     let pbar = ProgressBar::new(num)
         .with_style(style.clone())
         .with_finish(ProgressFinish::AndLeave);
-
-    let branch = &conf.env.branch;
-    println!("[+] Creating delta-patches...");
-    patch_list.par_iter().progress_with(pbar).for_each(|(hash, filename)| {
-        let package: &String = package_map.get(filename).unwrap();
-        let patch_filename = format!("updater/patches_studio/{branch}/{package}/{filename}/{hash}");
-        // Create proper PathBufs from the format we created
+    patch_list_mt.par_iter().progress_with(pbar).for_each(|patch| {
+        let package: &String = package_map.get(&patch.name).unwrap_or(&default_pkg);
+        let patch_filename = format!(
+            "updater/patches_studio/{}/{}/{}/{}",
+            branch, package, patch.name, patch.hash
+        );
         let outfile = out_path.join(patch_filename);
-        let oldfile = old_path.join(hash_to_file.get(hash).unwrap());
-        let newfile = new_path.join(&filename);
         // Ensure directories exist (Note: this is thread-safe in Rust!)
         fs::create_dir_all(outfile.parent().unwrap()).expect("Failed creating folder!");
-        utils::bsdiff::create_patch(&oldfile, &newfile, &outfile).expect("Creating hash failed horribly.");
+        utils::bsdiff::create_patch(&patch.old_file, &patch.new_file, &outfile)
+            .expect("Creating hash failed horribly.");
     });
 
     // If any patches were assigned to the non-parallel patch list run them here
@@ -221,16 +232,16 @@ pub fn create_patches(conf: &Config) -> Manifest {
             .with_finish(ProgressFinish::AndLeave);
 
         println!("[+] Creating non-parallel delta-patches...");
-        patch_list_st.iter().progress_with(pbar).for_each(|(hash, filename)| {
-            let package: &String = package_map.get(filename).unwrap();
-            let patch_filename = format!("updater/patches_studio/{branch}/{package}/{filename}/{hash}");
-            // Create proper PathBufs from the format we created
+        patch_list_st.iter().progress_with(pbar).for_each(|patch| {
+            let package: &String = package_map.get(&patch.name).unwrap_or(&default_pkg);
+            let patch_filename = format!(
+                "updater/patches_studio/{}/{}/{}/{}",
+                branch, package, patch.name, patch.hash
+            );
             let outfile = out_path.join(patch_filename);
-            let oldfile = old_path.join(hash_to_file.get(hash).unwrap());
-            let newfile = new_path.join(&filename);
-            // Ensure directories exist (Note: this is thread-safe in Rust!)
             fs::create_dir_all(outfile.parent().unwrap()).expect("Failed creating folder!");
-            utils::bsdiff::create_patch(&oldfile, &newfile, &outfile).expect("Creating hash failed horribly.");
+            utils::bsdiff::create_patch(&patch.old_file, &patch.new_file, &outfile)
+                .expect("Creating hash failed horribly.");
         });
     }
 
@@ -239,8 +250,7 @@ pub fn create_patches(conf: &Config) -> Manifest {
         .with_style(style)
         .with_finish(ProgressFinish::AndLeave);
     new_hashes.par_iter().progress_with(pbar).for_each(|(filename, _)| {
-        let branch = &conf.env.branch;
-        let package: &String = package_map.get(filename).unwrap();
+        let package: &String = package_map.get(filename).unwrap_or(&default_pkg);
         let patch_filename = format!("updater/update_studio/{branch}/{package}/{filename}");
         let updater_file = out_path.join(patch_filename);
         let build_file = new_path.join(&filename);
@@ -263,24 +273,26 @@ pub fn create_patches(conf: &Config) -> Manifest {
             name: package.name.to_owned(),
             ..Default::default()
         };
+
         manifest_package.removed_files = removed_files_list
             .iter()
-            .filter(|f| package_map.get(f).unwrap().as_str() == package.name)
+            .filter(|f| **package_map.get(f).unwrap_or(&default_pkg) == package.name)
             .cloned()
             .collect();
-        manifest_package
-            .removed_files
-            .sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
-
         manifest_package.files = new_hashes
             .iter()
-            .filter(|(f, _)| package_map.get(f).unwrap().as_str() == package.name)
+            .filter(|(f, _)| **package_map.get(f).unwrap_or(&default_pkg) == package.name)
             .map(|(f, v)| FileEntry {
                 name: f.to_owned(),
                 size: v.size,
                 hash: v.hash.to_owned(),
             })
             .collect();
+
+        // Sort file lists alphabetically for a nicer manifest
+        manifest_package
+            .removed_files
+            .sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
         manifest_package
             .files
             .sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
