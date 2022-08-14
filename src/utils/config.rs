@@ -215,6 +215,14 @@ impl Config {
             self.env.output_dir = misc::recursive_canonicalize(&self.env.output_dir);
             // ToDo Check other files (nsis script, updater, vcredist)
         }
+        // Check that config defines at least one package
+        if self.generate.packages.len() < 1 {
+            return Err(SomeError("No packages defined in config!".into()));
+        }
+        // Check if a manifest package is defined that does not have any filters
+        if !self.generate.packages.iter().any(|f| f.include_files.is_none()) {
+            return Err(SomeError("No catchall package exists in conifg!".into()));
+        }
 
         Ok(())
     }
