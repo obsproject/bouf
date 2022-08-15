@@ -155,13 +155,13 @@ impl Config {
             args.beta.unwrap_or_default(),
             args.rc.unwrap_or_default(),
         );
-        if let Some(input) = &args.new {
+        if let Some(input) = &args.input {
             self.env.input_dir = input.clone();
         }
-        if let Some(output) = &args.out {
+        if let Some(output) = &args.output {
             self.env.output_dir = output.clone();
         }
-        if let Some(previous) = &args.old {
+        if let Some(previous) = &args.previous {
             self.env.previous_dir = previous.clone();
         }
         if let Some(branch) = &args.branch {

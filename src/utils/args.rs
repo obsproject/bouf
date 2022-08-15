@@ -21,17 +21,17 @@ pub struct MainArgs {
     pub branch: Option<String>,
 
     // Optional overrides
-    #[clap(long, value_parser, value_name = "new build")]
-    pub new: Option<PathBuf>,
-    #[clap(long, value_parser, value_name = "old builds")]
-    pub old: Option<PathBuf>,
-    #[clap(long, value_parser, value_name = "output dir")]
-    pub out: Option<PathBuf>,
+    #[clap(short, long, value_parser, value_name = "new build")]
+    pub input: Option<PathBuf>,
+    #[clap(short, long, value_parser, value_name = "old builds")]
+    pub previous: Option<PathBuf>,
+    #[clap(short, long, value_parser, value_name = "output dir")]
+    pub output: Option<PathBuf>,
     /// File containing release notes
     #[clap(long, value_parser, value_name = "file.rtf")]
     pub note_file: Option<PathBuf>,
     /// Falls back to "UPDATER_PRIVATE_KEY" env var
-    #[clap(short, long, value_parser, value_name = "file.pem")]
+    #[clap(long, value_parser, value_name = "file.pem")]
     pub private_key: Option<PathBuf>,
 
     // Optional flags
