@@ -9,7 +9,7 @@ pub struct MainArgs {
     #[clap(short, long, value_parser, value_name = "Config file")]
     pub config: PathBuf,
     /// OBS main version
-    #[clap(long, value_parser, value_name = "Major.Minor.Patch[-(rc|beta)Num]")]
+    #[clap(short, long, value_parser, value_name = "Major.Minor.Patch[-(rc|beta)Num]")]
     pub version: String,
 
     // Optional version suffix
@@ -51,6 +51,6 @@ pub struct MainArgs {
     #[clap(long, value_parser, default_value_t = false)]
     pub skip_manifest_signing: bool,
     /// Clear existing output directory
-    #[clap(short, long, value_parser, default_value_t = false)]
+    #[clap(long, value_parser, default_value_t = false)]
     pub clear_output: bool,
 }
