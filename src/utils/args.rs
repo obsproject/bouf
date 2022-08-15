@@ -37,6 +37,9 @@ pub struct MainArgs {
     // Optional flags
     /// Skip creating NSIS installer
     #[clap(long, value_parser, default_value_t = false)]
+    pub skip_preparation: bool,
+    /// Skip creating NSIS installer
+    #[clap(long, value_parser, default_value_t = false)]
     pub skip_installer: bool,
     /// Skip creating delta patches
     #[clap(long, value_parser, default_value_t = false)]

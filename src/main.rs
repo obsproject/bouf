@@ -27,23 +27,28 @@ fn main() {
     println!(" - Previous versions dir: {}", &conf.env.previous_dir.to_str().unwrap());
     println!(" - Output dir: {}", &conf.env.output_dir.to_str().unwrap());
 
-    steps::prepare::ensure_output_dir(&conf.env.output_dir, args.clear_output)
-        .expect("Failed ensuring output dir exists/is empty.");
-    // Copy build to "install"  dir
-    steps::prepare::copy(&conf.env.input_dir, &conf.env.output_dir, &conf.prepare.copy)
-        .expect("Failed copying new build!");
-    // Codesign files
-    steps::prepare::codesign(&conf.env.output_dir, &conf.prepare.codesign).expect("Failed to run codesigning");
-    // Move/Strip PDBs
-    steps::prepare::strip_pdbs(&conf.env.output_dir, &conf.prepare.strip_pdbs, &conf.env)
-        .expect("Failed to strip PDBs");
+    if !args.skip_preparation {
+        steps::prepare::ensure_output_dir(&conf.env.output_dir, args.clear_output)
+            .expect("Failed ensuring output dir exists/is empty.");
+        // Copy build to "install"  dir
+        steps::prepare::copy(&conf.env.input_dir, &conf.env.output_dir, &conf.prepare.copy)
+            .expect("Failed copying new build!");
+        // Codesign files
+        steps::prepare::codesign(&conf.env.output_dir, &conf.prepare.codesign, &conf.prepare.copy)
+            .expect("Failed to run codesigning");
+        // Move/Strip PDBs
+        steps::prepare::strip_pdbs(&conf.env.output_dir, &conf.prepare.strip_pdbs, &conf.env)
+            .expect("Failed to strip PDBs");
+    } else {
+        println!("[*] Skipp preparation, this will also disable installer/zip creation.")
+    }
 
     // Create deltas and manifest
     println!("[+] Creating manifest and patches...");
-    let mut manifest = steps::generate::create_manifest_and_patches(&conf, args.skip_patches, false);
+    let mut manifest = steps::generate::create_manifest_and_patches(&conf, args.skip_patches, args.skip_preparation);
 
     // Create NSIS/ZIP
-    if !args.skip_installer {
+    if !args.skip_installer && !args.skip_preparation {
         println!("[+] Creating Installer");
         if let Err(e) = steps::package::run_nsis(&conf) {
             println!("[!] NSIS failed: {}", e);
@@ -61,14 +66,18 @@ fn main() {
         println!("[*] Skipping installer creation...")
     }
 
-    // Create PDB and install folder ZIPs
-    println!("[+] Creating zip files...");
-    match steps::package::create_zips(&conf) {
-        Ok(_) => println!("[+] ZIP files created successfully!"),
-        Err(err) => {
-            println!("[!] Creating zip files failed: {}", err);
-            exit(1)
+    if !args.skip_preparation {
+        // Create PDB and install folder ZIPs
+        println!("[+] Creating zip files...");
+        match steps::package::create_zips(&conf) {
+            Ok(_) => println!("[+] ZIP files created successfully!"),
+            Err(err) => {
+                println!("[!] Creating zip files failed: {}", err);
+                exit(1)
+            }
         }
+    } else {
+        println!("[*] Skipping ZIP creation as preparation was skipped...")
     }
 
     // Sign manifest if it was created
