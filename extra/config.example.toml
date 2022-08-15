@@ -124,4 +124,4 @@ vc_redist_path = "C:/path/to/vcredist"
 
 [post]
 # move processed input directory to "previous" folder after packaging is done
-move_to_old = true
+copy_to_old = true

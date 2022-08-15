@@ -109,5 +109,16 @@ fn main() {
         }
     }
 
+    if !args.skip_preparation {
+        if conf.post.copy_to_old {
+            println!("[+] Copying install dir to previous version directory...");
+            let res = steps::post::copy_to_old(&conf);
+            if let Err(e) = res {
+                println!("[!] Copying files failed: {}", e);
+                exit(1)
+            }
+        }
+    }
+
     println!("*** Finished! ***");
 }

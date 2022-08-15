@@ -135,7 +135,7 @@ pub struct UpdaterOptions {
 #[derive(Deserialize, Default)]
 #[serde(default)]
 pub struct PostOptions {
-    pub move_to_old: bool,
+    pub copy_to_old: bool,
 }
 
 impl Config {
