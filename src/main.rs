@@ -5,7 +5,6 @@ mod utils;
 
 use clap::Parser;
 
-use crate::steps::generate::Manifest;
 use crate::utils::args::MainArgs;
 use crate::utils::config::Config;
 
@@ -40,13 +39,8 @@ fn main() {
         .expect("Failed to strip PDBs");
 
     // Create deltas and manifest
-    let mut manifest: Option<Manifest> = None;
-    if !args.skip_patches {
-        println!("[+] Running Delta Patch Generator...");
-        manifest = Some(steps::generate::create_patches(&conf));
-    } else {
-        println!("[*] Skipping delta patch generation...");
-    }
+    println!("[+] Creating manifest and patches...");
+    let mut manifest = steps::generate::create_manifest_and_patches(&conf, args.skip_patches, false);
 
     // Create NSIS/ZIP
     if !args.skip_installer {
@@ -78,33 +72,31 @@ fn main() {
     }
 
     // Sign manifest if it was created
-    if let Some(mut manifest) = manifest {
-        println!("[+] Finalising manifest...");
-        let mf = steps::package::finalise_manifest(&conf, &mut manifest);
-        if let Err(e) = mf {
-            println!("[!] Finalising manifest failed: {}", e);
+    println!("[+] Finalising manifest...");
+    let mf = steps::package::finalise_manifest(&conf, &mut manifest);
+    if let Err(e) = mf {
+        println!("[!] Finalising manifest failed: {}", e);
+        exit(1)
+    }
+
+    if !conf.package.updater.skip_sign {
+        println!("[+] Signing manifest...");
+        // ToDo fix this mess
+        /* let mut privkey = args.private_key;
+        if conf.package.updater.private_key.exists() && conf.package.updater.private_key.ends_with(".pem") {
+            privkey = Some(conf.package.updater.private_key);
+        } */
+
+        let key = utils::sign::load_key(Some(conf.package.updater.private_key));
+        if let Err(e) = key {
+            println!("[!] Loading singing key failed: {}", e);
             exit(1)
         }
 
-        if !conf.package.updater.skip_sign {
-            println!("[+] Signing manifest...");
-            // ToDo fix this mess
-            /* let mut privkey = args.private_key;
-            if conf.package.updater.private_key.exists() && conf.package.updater.private_key.ends_with(".pem") {
-                privkey = Some(conf.package.updater.private_key);
-            } */
-
-            let key = utils::sign::load_key(Some(conf.package.updater.private_key));
-            if let Err(e) = key {
-                println!("[!] Loading singing key failed: {}", e);
-                exit(1)
-            }
-
-            let res = utils::sign::sign_file(&key.unwrap(), &mf.unwrap());
-            if let Err(e) = res {
-                println!("[!] Signing file failed: {}", e);
-                exit(1)
-            }
+        let res = utils::sign::sign_file(&key.unwrap(), &mf.unwrap());
+        if let Err(e) = res {
+            println!("[!] Signing file failed: {}", e);
+            exit(1)
         }
     }
 

@@ -87,7 +87,7 @@ fn write_file_unchecked(filename: PathBuf, contents: String) {
     }
 }
 
-pub fn create_manifest_and_patches(conf: &Config, skipped_prep: bool) -> Manifest {
+pub fn create_manifest_and_patches(conf: &Config, skip_patches: bool, skipped_prep: bool) -> Manifest {
     // Convert directories to absolute paths
     let new_path: PathBuf;
     let old_path = misc::normalize_path(&conf.env.previous_dir);
@@ -139,12 +139,14 @@ pub fn create_manifest_and_patches(conf: &Config, skipped_prep: bool) -> Manifes
             changed_files.insert(rel_path.clone());
         }
 
-        patch_list.push(Patch {
-            hash: fileinfo.hash.clone(),
-            name: rel_path.clone(),
-            old_file: old_path.join(path),
-            new_file: new_path.join(rel_path),
-        });
+        if !skip_patches {
+            patch_list.push(Patch {
+                hash: fileinfo.hash.clone(),
+                name: rel_path.clone(),
+                old_file: old_path.join(path),
+                new_file: new_path.join(rel_path),
+            });
+        }
 
         seen_hashes.insert(seen_key);
     }
@@ -197,73 +199,6 @@ pub fn create_manifest_and_patches(conf: &Config, skipped_prep: bool) -> Manifes
         }
     }
 
-    // Patches to generate in single-threaded mode (e.g. CEF on CI)
-    let patch_list_st: Vec<&Patch> = patch_list
-        .iter()
-        .filter(|p| conf.generate.exclude_from_parallel.iter().any(|s| p.name.contains(s)))
-        .collect();
-    // Patches to generate in multi-threaded mode (yay rayon)
-    let patch_list_mt: Vec<&Patch> = patch_list
-        .iter()
-        .filter(|p| !conf.generate.exclude_from_parallel.iter().any(|s| p.name.contains(s)))
-        .collect();
-
-    // we will re-use these for all following loops
-    let branch = &conf.env.branch;
-    let style = ProgressStyle::with_template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}").unwrap();
-
-    println!("[+] Creating delta-patches...");
-    let num = patch_list_mt.len() as u64;
-    let pbar = ProgressBar::new(num)
-        .with_style(style.clone())
-        .with_finish(ProgressFinish::AndLeave);
-    patch_list_mt.par_iter().progress_with(pbar).for_each(|patch| {
-        let package: &String = package_map.get(&patch.name).unwrap_or(&default_pkg);
-        let patch_filename = format!(
-            "updater/patches_studio/{}/{}/{}/{}",
-            branch, package, patch.name, patch.hash
-        );
-        let outfile = out_path.join(patch_filename);
-        // Ensure directories exist (Note: this is thread-safe in Rust!)
-        fs::create_dir_all(outfile.parent().unwrap()).expect("Failed creating folder!");
-        utils::bsdiff::create_patch(&patch.old_file, &patch.new_file, &outfile)
-            .expect("Creating hash failed horribly.");
-    });
-
-    // If any patches were assigned to the non-parallel patch list run them here
-    if patch_list_st.len() > 0 {
-        let num = patch_list_st.len() as u64;
-        let pbar = ProgressBar::new(num)
-            .with_style(style.clone())
-            .with_finish(ProgressFinish::AndLeave);
-
-        println!("[+] Creating non-parallel delta-patches...");
-        patch_list_st.iter().progress_with(pbar).for_each(|patch| {
-            let package: &String = package_map.get(&patch.name).unwrap_or(&default_pkg);
-            let patch_filename = format!(
-                "updater/patches_studio/{}/{}/{}/{}",
-                branch, package, patch.name, patch.hash
-            );
-            let outfile = out_path.join(patch_filename);
-            fs::create_dir_all(outfile.parent().unwrap()).expect("Failed creating folder!");
-            utils::bsdiff::create_patch(&patch.old_file, &patch.new_file, &outfile)
-                .expect("Creating hash failed horribly.");
-        });
-    }
-
-    println!("[+] Copying new build to updater structure...");
-    let pbar = ProgressBar::new(new_hashes.len() as u64)
-        .with_style(style)
-        .with_finish(ProgressFinish::AndLeave);
-    new_hashes.par_iter().progress_with(pbar).for_each(|(filename, _)| {
-        let package: &String = package_map.get(filename).unwrap_or(&default_pkg);
-        let patch_filename = format!("updater/update_studio/{branch}/{package}/{filename}");
-        let updater_file = out_path.join(patch_filename);
-        let build_file = new_path.join(&filename);
-        fs::create_dir_all(updater_file.parent().unwrap()).expect("Failed creating folder!");
-        fs::copy(build_file, updater_file).expect("Failed copying file!");
-    });
-
     // Create the manifest
     let mut manifest = Manifest {
         version_major: conf.obs_version.version_major,
@@ -304,6 +239,79 @@ pub fn create_manifest_and_patches(conf: &Config, skipped_prep: bool) -> Manifes
             .sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
 
         manifest.packages.push(manifest_package);
+    }
+
+    // we will re-use these for all following loops
+    let branch = &conf.env.branch;
+    let style = ProgressStyle::with_template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}").unwrap();
+
+    let pbar = ProgressBar::new(new_hashes.len() as u64)
+        .with_style(style.clone())
+        .with_finish(ProgressFinish::AndLeave);
+
+    println!("[+] Copying new build to updater structure...");
+    new_hashes.par_iter().progress_with(pbar).for_each(|(filename, _)| {
+        let package: &String = package_map.get(filename).unwrap_or(&default_pkg);
+        let patch_filename = format!("updater/update_studio/{branch}/{package}/{filename}");
+        let updater_file = out_path.join(patch_filename);
+        let build_file = new_path.join(&filename);
+        fs::create_dir_all(updater_file.parent().unwrap()).expect("Failed creating folder!");
+        fs::copy(build_file, updater_file).expect("Failed copying file!");
+    });
+
+    if skip_patches || patch_list.is_empty() {
+        println!("[*] No patches to create or patch generation skipped");
+        return manifest;
+    }
+
+    // Patches to generate in single-threaded mode (e.g. CEF on CI)
+    let patch_list_st: Vec<&Patch> = patch_list
+        .iter()
+        .filter(|p| conf.generate.exclude_from_parallel.iter().any(|s| p.name.contains(s)))
+        .collect();
+    // Patches to generate in multi-threaded mode (yay rayon)
+    let patch_list_mt: Vec<&Patch> = patch_list
+        .iter()
+        .filter(|p| !conf.generate.exclude_from_parallel.iter().any(|s| p.name.contains(s)))
+        .collect();
+
+    println!("[+] Creating delta-patches...");
+    let num = patch_list_mt.len() as u64;
+    let pbar = ProgressBar::new(num)
+        .with_style(style.clone())
+        .with_finish(ProgressFinish::AndLeave);
+    patch_list_mt.par_iter().progress_with(pbar).for_each(|patch| {
+        let package: &String = package_map.get(&patch.name).unwrap_or(&default_pkg);
+        let patch_filename = format!(
+            "updater/patches_studio/{}/{}/{}/{}",
+            branch, package, patch.name, patch.hash
+        );
+        let outfile = out_path.join(patch_filename);
+        // Ensure directories exist (Note: this is thread-safe in Rust!)
+        fs::create_dir_all(outfile.parent().unwrap()).expect("Failed creating folder!");
+        utils::bsdiff::create_patch(&patch.old_file, &patch.new_file, &outfile)
+            .expect("Creating hash failed horribly.");
+    });
+
+    // If any patches were assigned to the non-parallel patch list run them here
+    if patch_list_st.len() > 0 {
+        let num = patch_list_st.len() as u64;
+        let pbar = ProgressBar::new(num)
+            .with_style(style.clone())
+            .with_finish(ProgressFinish::AndLeave);
+
+        println!("[+] Creating non-parallel delta-patches...");
+        patch_list_st.iter().progress_with(pbar).for_each(|patch| {
+            let package: &String = package_map.get(&patch.name).unwrap_or(&default_pkg);
+            let patch_filename = format!(
+                "updater/patches_studio/{}/{}/{}/{}",
+                branch, package, patch.name, patch.hash
+            );
+            let outfile = out_path.join(patch_filename);
+            fs::create_dir_all(outfile.parent().unwrap()).expect("Failed creating folder!");
+            utils::bsdiff::create_patch(&patch.old_file, &patch.new_file, &outfile)
+                .expect("Creating hash failed horribly.");
+        });
     }
 
     manifest
