@@ -53,9 +53,15 @@ OPTIONS:
 Some parameters can be set via environment variables (e.g. secrets):
 - `UPDATER_PRIVATE_KEY` - updater signing key (PEM, encoded as base64)
 
+## License
+
+The source code found in `src/` is licensed under Apache-2 (see `LICENSE.txt`).
+
+Files in `extra/nsis` may have other licenses and exist primarily for CI usage and testing,
+and may not be redistributed under the Apache-2 terms.
+
 ## ToDo
 
-- Figure out a license
 - Cleanup, bugfixes, rewrites...
   + See "ToDo"s in source code and `rustc` warnings (it angry)
 - Also probably more tests.
