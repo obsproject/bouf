@@ -32,8 +32,8 @@ pub fn copy(in_path: &PathBuf, out_path: &PathBuf, opts: &CopyOptions) -> Result
     let inp_path = misc::normalize_path(&in_path);
     let mut overrides: HashSet<&String> = HashSet::new();
     // Convert to hash set for fast lookup
-    opts.overrides.iter().for_each(|(old, _)| {
-        overrides.insert(old);
+    opts.overrides.iter().for_each(|(obs_path, _)| {
+        overrides.insert(obs_path);
     });
 
     println!(
@@ -129,8 +129,12 @@ pub fn strip_pdbs(path: &PathBuf, opts: &StripPDBOptions, env: &EnvOptions) -> R
 
 // Sign all eligible files in a folder using Signtool
 #[cfg(target_os = "windows")]
-pub fn codesign(path: &PathBuf, opts: &CodesignOptions) -> Result<(), Box<dyn std::error::Error>> {
-    if opts.skip_sign {
+pub fn codesign(
+    path: &PathBuf,
+    sign_opts: &CodesignOptions,
+    copy_opts: &CopyOptions,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if sign_opts.skip_sign {
         return Ok(());
     }
     let inp_path = misc::normalize_path(&path.join("install"));
@@ -145,12 +149,21 @@ pub fn codesign(path: &PathBuf, opts: &CodesignOptions) -> Result<(), Box<dyn st
     {
         let file: DirEntry = file;
         let relative_path = file.path().to_str().unwrap();
-        if !opts.sign_exts.iter().find(|&x| relative_path.ends_with(x)).is_some() {
+        if !sign_opts.sign_exts.iter().any(|x| relative_path.ends_with(x.as_str())) {
+            continue;
+        }
+        // Do not re-sign files that were copied
+        let relative_path_str = String::from(relative_path).replace("\\", "/");
+        if copy_opts
+            .overrides
+            .iter()
+            .any(|(obs_path, _)| relative_path_str == *obs_path)
+        {
             continue;
         }
         to_sign.push(file.path().canonicalize()?)
     }
-    sign(to_sign, &opts)?;
+    sign(to_sign, &sign_opts)?;
 
     Ok(())
 }
