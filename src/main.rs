@@ -90,13 +90,15 @@ fn main() {
 
     if !conf.package.updater.skip_sign {
         println!("[+] Signing manifest...");
-        // ToDo fix this mess
-        /* let mut privkey = args.private_key;
-        if conf.package.updater.private_key.exists() && conf.package.updater.private_key.ends_with(".pem") {
-            privkey = Some(conf.package.updater.private_key);
-        } */
+        let mut privkey = args.private_key;
 
-        let key = utils::sign::load_key(Some(conf.package.updater.private_key));
+        if privkey.is_none() {
+            if conf.package.updater.private_key.exists() && conf.package.updater.private_key.ends_with(".pem") {
+                privkey = Some(conf.package.updater.private_key.clone());
+            }
+        }
+
+        let key = utils::sign::load_key(privkey);
         if let Err(e) = key {
             println!("[!] Loading singing key failed: {}", e);
             exit(1)
