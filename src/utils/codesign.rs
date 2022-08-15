@@ -1,3 +1,4 @@
+#![allow(unused_variables)]
 use std::ffi::OsString;
 use std::io::Write;
 use std::path::{Path, PathBuf};
