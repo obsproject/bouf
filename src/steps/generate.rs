@@ -87,11 +87,17 @@ fn write_file_unchecked(filename: PathBuf, contents: String) {
     }
 }
 
-pub fn create_patches(conf: &Config) -> Manifest {
+pub fn create_manifest_and_patches(conf: &Config, skipped_prep: bool) -> Manifest {
     // Convert directories to absolute paths
-    let new_path = misc::normalize_path(&conf.env.input_dir);
+    let new_path: PathBuf;
     let old_path = misc::normalize_path(&conf.env.previous_dir);
     let out_path = misc::normalize_path(&conf.env.output_dir);
+
+    if skipped_prep {
+        new_path = misc::normalize_path(&conf.env.input_dir);
+    } else {
+        new_path = misc::normalize_path(&conf.env.output_dir.join("install"));
+    }
 
     std::fs::create_dir_all(&out_path).expect("Failed to create output directory");
 
