@@ -21,9 +21,32 @@ The generated output has the following structure:
 
 ## Usage:
 
-`bouf.exe --config <config.toml> --version <version> [--beta <num> / --rc <num>] --new C:/obs/repo/build/output --old C:/obs/releases/old --out C:/obs/releases/new [--skip-patches] [--skip-installer] [--branch <stable/nightly/beta>] [--notes-file <path/to/notes.rtf>] [--private-key <path/to/privkey.pem>]`
+```
+bouf
 
-May not be up to date, use `bouf.exe -h` to see full help.
+USAGE:
+    bouf.exe [OPTIONS] --config <Config file> --version <Major.Minor.Patch[-(rc|beta)Num]>
+
+OPTIONS:
+        --beta <Beta number>
+        --branch <Beta branch>
+    -c, --config <Config file>
+        --clear-output                                  Clear existing output directory
+    -h, --help                                          Print help information
+    -i, --input <new build>
+        --note-file <file.rtf>                          File containing release notes
+    -o, --output <output dir>
+    -p, --previous <old builds>
+        --private-key <file.pem>                        Falls back to "UPDATER_PRIVATE_KEY" env var
+        --rc <RC number>
+        --skip-codesigning                              Skip codesigning
+        --skip-installer                                Skip creating NSIS installer
+        --skip-manifest-signing                         Skip signing manifest
+        --skip-patches                                  Skip creating delta patches
+        --skip-preparation                              Skip creating NSIS installer
+    -v, --version <Major.Minor.Patch[-(rc|beta)Num]>    OBS main version
+```
+
 
 **Note:** A valid configuration file based on `extra/config.example.toml` is required (see `extra/ci` for an example).
 
