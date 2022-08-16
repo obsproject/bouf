@@ -20,7 +20,7 @@ struct Args {
 fn main() {
     let args: Args = Args::parse();
 
-    let key = utils::sign::load_key(args.private_key).expect("Failed to load private key!");
+    let key = utils::sign::load_key(&args.private_key).expect("Failed to load private key!");
 
     for f in args.files {
         println!("Signing \"{}\"", f.display());

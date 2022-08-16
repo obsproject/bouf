@@ -5,7 +5,7 @@ use rsa::Hash::SHA2_512;
 use rsa::{pkcs8::DecodePrivateKey, PaddingScheme, RsaPrivateKey};
 use sha2::Digest;
 
-pub fn load_key(key_file: Option<PathBuf>) -> Result<RsaPrivateKey, Box<dyn std::error::Error>> {
+pub fn load_key(key_file: &Option<PathBuf>) -> Result<RsaPrivateKey, Box<dyn std::error::Error>> {
     let pem: String;
 
     if let Some(_path) = key_file {
@@ -49,7 +49,7 @@ mod rsa_tests {
         let signature_path = PathBuf::from("extra/test_files/in.txt.sig");
 
         // Try with key file
-        let key = load_key(Some(key_path.to_owned())).unwrap();
+        let key = load_key(&Some(key_path.to_owned())).unwrap();
         sign_file(&key, &file_path);
         let finfo = hash_file(&signature_path);
         assert_eq!(finfo.hash, "4aae469c5a90903a40f1757c7b50d38c5ddfb364");
@@ -58,7 +58,7 @@ mod rsa_tests {
         let b64_key = base64::encode(fs::read(key_path).unwrap());
         env::set_var("UPDATER_PRIVATE_KEY", b64_key);
 
-        let key = load_key(None).unwrap();
+        let key = load_key(&None).unwrap();
         sign_file(&key, &file_path);
         let finfo = hash_file(&signature_path);
         assert_eq!(finfo.hash, "4aae469c5a90903a40f1757c7b50d38c5ddfb364");

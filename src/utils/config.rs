@@ -1,12 +1,12 @@
+use std::fs;
 use std::path::{Path, PathBuf};
-use std::{env, fs};
 
 use serde::Deserialize;
 use toml;
 
 use crate::utils::args::MainArgs;
 use crate::utils::errors::SomeError;
-use crate::utils::misc;
+use crate::utils::{misc, sign};
 
 fn get_default_branch() -> String {
     String::from("stable")
@@ -128,7 +128,7 @@ pub struct UpdaterOptions {
     pub skip_sign: bool,
     pub notes_files: PathBuf,
     pub updater_path: PathBuf,
-    pub private_key: PathBuf,
+    pub private_key: Option<PathBuf>,
     pub vc_redist_path: PathBuf,
     pub skip_for_prerelease: bool,
 }
@@ -175,7 +175,9 @@ impl Config {
         self.prepare.codesign.skip_sign = args.skip_codesigning;
         self.package.installer.skip_sign = args.skip_codesigning;
         self.package.updater.skip_sign = args.skip_manifest_signing;
-
+        if let Some(privkey) = &args.private_key {
+            self.package.updater.private_key = Some(privkey.to_owned());
+        }
         // Todo remaining args
     }
 
@@ -189,10 +191,8 @@ impl Config {
         }
         // Check if private key is set correctly (if signing is enabled)
         if !self.package.updater.skip_sign {
-            if env::var("UPDATER_PRIVATE_KEY").is_err() {
-                if let Err(e) = fs::metadata(&self.package.updater.private_key) {
-                    return Err(SomeError(format!("Private key not found: {}", e)));
-                }
+            if let Err(e) = sign::load_key(&self.package.updater.private_key) {
+                return Err(SomeError(format!("Failed loading private key: {}", e)));
             }
         }
         // Check if codesigning parameters are set (if enabled)
