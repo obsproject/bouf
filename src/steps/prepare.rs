@@ -86,7 +86,12 @@ pub fn copy(in_path: &PathBuf, out_path: &PathBuf, opts: &CopyOptions) -> Result
 }
 
 // Move PDBs (except excluded) to separate dir, then strip remaining ones
-pub fn strip_pdbs(path: &PathBuf, opts: &StripPDBOptions, env: &EnvOptions) -> Result<(), Box<dyn std::error::Error>> {
+pub fn strip_pdbs(
+    path: &PathBuf,
+    opts: &StripPDBOptions,
+    env: &EnvOptions,
+    copy_opts: &CopyOptions,
+) -> Result<(), Box<dyn std::error::Error>> {
     let inp_path = misc::normalize_path(&path.join("install"));
     let out_path = misc::normalize_path(&path.join("pdbs"));
 
@@ -111,11 +116,14 @@ pub fn strip_pdbs(path: &PathBuf, opts: &StripPDBOptions, env: &EnvOptions) -> R
         if let Some(_parent) = new_path.parent() {
             fs::create_dir_all(_parent)?;
         }
-
-        if opts.exclude.iter().find(|&x| relative_path_str.contains(x)).is_some() {
+        // Skip files excluded or that were overrides
+        if opts.exclude.iter().any(|x| relative_path_str.contains(x))
+            || copy_opts.overrides.iter().any(|(p, _)| relative_path_str == *p)
+        {
             fs::copy(file.path(), &new_path)?;
             continue;
         }
+
         fs::rename(file.path(), &new_path)?;
 
         // Finally, run PDBCopy
@@ -154,11 +162,7 @@ pub fn codesign(
         }
         // Do not re-sign files that were copied
         let relative_path_str = String::from(relative_path).replace("\\", "/");
-        if copy_opts
-            .overrides
-            .iter()
-            .any(|(obs_path, _)| relative_path_str == *obs_path)
-        {
+        if copy_opts.overrides.iter().any(|(p, _)| relative_path_str == *p) {
             continue;
         }
         to_sign.push(file.path().canonicalize()?)

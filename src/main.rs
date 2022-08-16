@@ -37,8 +37,13 @@ fn main() {
         steps::prepare::codesign(&conf.env.output_dir, &conf.prepare.codesign, &conf.prepare.copy)
             .expect("Failed to run codesigning");
         // Move/Strip PDBs
-        steps::prepare::strip_pdbs(&conf.env.output_dir, &conf.prepare.strip_pdbs, &conf.env)
-            .expect("Failed to strip PDBs");
+        steps::prepare::strip_pdbs(
+            &conf.env.output_dir,
+            &conf.prepare.strip_pdbs,
+            &conf.env,
+            &conf.prepare.copy,
+        )
+        .expect("Failed to strip PDBs");
     } else {
         println!("[*] Skipp preparation, this will also disable installer/zip creation.")
     }
