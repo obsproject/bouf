@@ -22,8 +22,7 @@ pub struct Manifest {
     pub version_patch: u8,
     pub beta: u8,
     pub rc: u8,
-    // ToDo figure out what to do with this, maybe a timestamp?
-    pub nightly: u32,
+    pub commit: String,
     pub vc2019_redist_x64: String,
     pub vc2019_redist_x86: String,
 }
@@ -206,6 +205,7 @@ pub fn create_manifest_and_patches(conf: &Config, skip_patches: bool, skipped_pr
         version_patch: conf.obs_version.version_patch,
         rc: conf.obs_version.rc,
         beta: conf.obs_version.beta,
+        commit: conf.obs_version.commit.to_owned(),
         ..Default::default()
     };
 

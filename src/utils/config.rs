@@ -26,6 +26,7 @@ pub struct Config {
 #[derive(Deserialize, Default)]
 #[serde(default)]
 pub struct ObsVersion {
+    pub commit: String,
     pub version_str: String,
     pub version_major: u8,
     pub version_minor: u8,
@@ -167,11 +168,8 @@ impl Config {
         if let Some(branch) = &args.branch {
             self.env.branch = branch.to_owned();
         }
-        if let Some(beta) = &args.beta {
-            self.obs_version.beta = *beta;
-        }
-        if let Some(rc) = &args.rc {
-            self.obs_version.rc = *rc;
+        if let Some(commit) = &args.commit {
+            self.obs_version.commit = commit.replace("g", "");
         }
 
         self.prepare.codesign.skip_sign = args.skip_codesigning;

@@ -13,12 +13,18 @@ pub struct MainArgs {
     pub version: String,
 
     // Optional version suffix
+    /// Beta number
     #[clap(long, value_parser, value_name = "Beta number")]
     pub beta: Option<u8>,
+    /// RC number
     #[clap(long, value_parser, value_name = "RC number")]
     pub rc: Option<u8>,
+    /// Branch used in patcher manifest name and folder structure
     #[clap(long, value_parser, value_name = "Beta branch")]
     pub branch: Option<String>,
+    /// Commit hash used in manifest
+    #[clap(long, value_parser, value_name = "commit hash")]
+    pub commit: Option<String>,
 
     // Optional overrides
     #[clap(short, long, value_parser, value_name = "new build")]
