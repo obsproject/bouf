@@ -41,7 +41,7 @@ jobs:
         run: cargo build -r
 
       - name: Run bouf
-        run: target/release/bouf --config extra/ci/config.toml --version 28.0.0-beta2 --branch beta -i test/new -o test/old -p test/out --clear-output
+        run: target/release/bouf --config extra/ci/config.toml --version 28.0.0-beta2 --branch beta -i test/new -p test/old -o test/out --clear-output
 
       - name: Upload results
         uses: actions/upload-artifact@v3
