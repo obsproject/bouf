@@ -10,8 +10,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          lfs: true
 
       - name: Update rust toolchain
         run: rustup toolchain install stable --profile minimal
