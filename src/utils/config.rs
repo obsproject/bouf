@@ -85,6 +85,7 @@ pub struct StripPDBOptions {
 #[serde(default)]
 pub struct GenerationOptions {
     // patch_type: String,
+    pub skip_for_prerelease: bool,
     pub removed_files: Vec<String>,
     pub exclude_from_parallel: Vec<String>,
     pub exclude_from_removal: Vec<String>,
@@ -119,7 +120,7 @@ pub struct InstallerOptions {
 pub struct ZipOptions {
     pub name: String,
     pub pdb_name: String,
-    pub skip_for_prerelease: bool,
+    pub skip_pdbs_for_prerelease: bool,
 }
 
 #[derive(Deserialize, Default)]
@@ -130,7 +131,6 @@ pub struct UpdaterOptions {
     pub updater_path: PathBuf,
     pub private_key: Option<PathBuf>,
     pub vc_redist_path: PathBuf,
-    pub skip_for_prerelease: bool,
 }
 
 #[derive(Deserialize, Default)]
