@@ -19,7 +19,7 @@ pub struct MainArgs {
     /// RC number
     #[clap(long, value_parser, value_name = "RC number")]
     pub rc: Option<u8>,
-    /// Branch used in patcher manifest name and folder structure
+    /// Branch used in manifest name/update files
     #[clap(long, value_parser, value_name = "Beta branch")]
     pub branch: Option<String>,
     /// Commit hash used in manifest
