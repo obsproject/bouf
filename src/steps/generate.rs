@@ -241,6 +241,11 @@ pub fn create_manifest_and_patches(conf: &Config, skip_patches: bool, skipped_pr
         manifest.packages.push(manifest_package);
     }
 
+    // Sort packages by name as well
+    manifest
+        .packages
+        .sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+
     // we will re-use these for all following loops
     let branch = &conf.env.branch;
     let style = ProgressStyle::with_template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}").unwrap();
