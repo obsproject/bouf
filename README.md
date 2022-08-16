@@ -25,20 +25,21 @@ The generated output has the following structure:
 bouf
 
 USAGE:
-    bouf.exe [OPTIONS] --config <Config file> --version <Major.Minor.Patch[-(rc|beta)Num]>
+    bouf [OPTIONS] --config <Config file> --version <Major.Minor.Patch[-(rc|beta)Num]>
 
 OPTIONS:
-        --beta <Beta number>
-        --branch <Beta branch>
+        --beta <Beta number>                            Beta number
+        --branch <Beta branch>                          Branch used in manifest name/update files
     -c, --config <Config file>
         --clear-output                                  Clear existing output directory
+        --commit <commit hash>                          Commit hash used in manifest
     -h, --help                                          Print help information
     -i, --input <new build>
         --note-file <file.rtf>                          File containing release notes
     -o, --output <output dir>
     -p, --previous <old builds>
         --private-key <file.pem>                        Falls back to "UPDATER_PRIVATE_KEY" env var
-        --rc <RC number>
+        --rc <RC number>                                RC number
         --skip-codesigning                              Skip codesigning
         --skip-installer                                Skip creating NSIS installer
         --skip-manifest-signing                         Skip signing manifest
