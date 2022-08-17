@@ -115,6 +115,7 @@ pub fn create_manifest_and_patches(conf: &Config, skip_patches: bool, skipped_pr
     let mut seen_hashes: HashSet<(String, String)> = HashSet::new();
     // Just used for logging
     let mut changed_files: HashSet<String> = HashSet::new();
+    let mut unchanged_files: HashSet<String> = HashSet::new();
 
     for (path, fileinfo) in old_hashes {
         // Strip version (first folder name) from path
@@ -137,6 +138,7 @@ pub fn create_manifest_and_patches(conf: &Config, skip_patches: bool, skipped_pr
             added_files.remove(&rel_path);
             // Skip if old and new hash match
             if new_hashes.get(&rel_path).unwrap().hash == fileinfo.hash {
+                unchanged_files.insert(rel_path.clone());
                 continue;
             }
             changed_files.insert(rel_path.clone());
@@ -162,16 +164,20 @@ pub fn create_manifest_and_patches(conf: &Config, skip_patches: bool, skipped_pr
     let mut added_files_list = added_files.into_iter().collect::<Vec<_>>();
     let mut removed_files_list = removed_files.clone().into_iter().collect::<Vec<_>>();
     let mut changed_files_list = changed_files.into_iter().collect::<Vec<_>>();
+    let mut unchanged_files_list = unchanged_files.into_iter().collect::<Vec<_>>();
     added_files_list.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
     removed_files_list.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
     changed_files_list.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
+    unchanged_files_list.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
     write_file_unchecked(out_path.join("added.txt"), added_files_list.join("\n"));
-    write_file_unchecked(out_path.join("changed.txt"), changed_files_list.join("\n"));
     write_file_unchecked(out_path.join("removed.txt"), removed_files_list.join("\n"));
-    println!("    -   Added : {} (see added.txt)", added_files_list.len());
-    println!("    - Changed : {} (see changed.txt)", changed_files_list.len());
-    println!("    - Removed : {} (see removed.txt)", removed_files_list.len());
-    println!("    - Patches : {}", patch_list.len());
+    write_file_unchecked(out_path.join("changed.txt"), changed_files_list.join("\n"));
+    write_file_unchecked(out_path.join("unchanged.txt"), unchanged_files_list.join("\n"));
+    println!("  -     Added : {} (see added.txt)", added_files_list.len());
+    println!("  -   Changed : {} (see changed.txt)", changed_files_list.len());
+    println!("  - Unchanged : {} (see unchanged.txt)", unchanged_files_list.len());
+    println!("  -   Removed : {} (see removed.txt)", removed_files_list.len());
+    println!("  -   Patches : {}", patch_list.len());
 
     // This is a simple list we use to sort files into packages containing (pattern, package name) tuples
     let mut pattern_list: Vec<(&String, &String)> = Vec::new();
