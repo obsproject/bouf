@@ -135,6 +135,10 @@ pub fn create_manifest_and_patches(conf: &Config, skip_patches: bool, skipped_pr
             continue;
         } else {
             added_files.remove(&rel_path);
+            // Skip if old and new hash match
+            if new_hashes.get(&rel_path).unwrap().hash == fileinfo.hash {
+                continue;
+            }
             changed_files.insert(rel_path.clone());
         }
 
