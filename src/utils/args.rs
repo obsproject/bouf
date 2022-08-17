@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use clap::Parser;
 
 #[derive(Parser, Debug)]
-#[clap(about, long_about = None)]
+#[clap(version, about, long_about = "Building OBS Updates Fast(er)")]
 pub struct MainArgs {
     // Required
     #[clap(short, long, value_parser, value_name = "Config file")]
