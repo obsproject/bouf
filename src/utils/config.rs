@@ -172,9 +172,9 @@ impl Config {
             self.obs_version.commit = commit.replace("g", "");
         }
 
-        self.prepare.codesign.skip_sign = args.skip_codesigning;
-        self.package.installer.skip_sign = args.skip_codesigning;
-        self.package.updater.skip_sign = args.skip_manifest_signing;
+        self.prepare.codesign.skip_sign = args.skip_codesigning || self.prepare.codesign.skip_sign;
+        self.package.installer.skip_sign = args.skip_codesigning || self.package.installer.skip_sign;
+        self.package.updater.skip_sign = args.skip_manifest_signing || self.package.updater.skip_sign;
         if let Some(privkey) = &args.private_key {
             self.package.updater.private_key = Some(privkey.to_owned());
         }
