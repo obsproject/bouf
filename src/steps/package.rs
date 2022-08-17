@@ -9,7 +9,7 @@ use serde_json;
 
 use crate::steps::generate::Manifest;
 use crate::utils::codesign::sign;
-use crate::utils::config::Config;
+use crate::utils::config::{Config, EnvOptions};
 use crate::utils::errors::SomeError;
 use crate::utils::hash::hash_file;
 use crate::utils::misc;
@@ -128,7 +128,7 @@ pub fn create_zips(conf: &Config) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn run_pandoc(path: &PathBuf) -> Result<String, Box<dyn std::error::Error>> {
+fn run_pandoc(path: &PathBuf, env: &EnvOptions) -> Result<String, Box<dyn std::error::Error>> {
     let args: Vec<OsString> = vec![
         "--from".into(),
         "markdown".into(),
@@ -137,7 +137,7 @@ fn run_pandoc(path: &PathBuf) -> Result<String, Box<dyn std::error::Error>> {
         path.to_owned().into_os_string(),
     ];
 
-    let output = Command::new("pandoc").args(args).output()?;
+    let output = Command::new(&env.pandoc_path).args(args).output()?;
 
     if !output.status.success() {
         println!("pandoc returned non-success status: {}", output.status);
@@ -159,7 +159,7 @@ pub fn finalise_manifest(conf: &Config, manifest: &mut Manifest) -> Result<PathB
     let hash = hash_file(&conf.package.updater.vc_redist_path);
     manifest.vc2019_redist_x64 = hash.hash;
     // Add notes
-    manifest.notes = run_pandoc(&conf.package.updater.notes_files)?;
+    manifest.notes = run_pandoc(&conf.package.updater.notes_files, &conf.env)?;
 
     let json_str = serde_json::to_string_pretty(&manifest)?;
     let mut f = File::create(manifest_file.as_path())?;
