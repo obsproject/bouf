@@ -34,7 +34,7 @@ pub fn parse_version(version_string: &String) -> (u8, u8, u8, u8, u8) {
 pub fn get_filename_version(version: &ObsVersion, short: bool) -> String {
     let mut ver = format!("{}.{}", version.version_major, version.version_minor);
     if !short || version.version_patch > 0 {
-        ver += format!(".{}", version.version_major).as_str();
+        ver += format!(".{}", version.version_patch).as_str();
     }
 
     if version.beta > 0 {
