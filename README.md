@@ -22,7 +22,7 @@ The generated output has the following structure:
 ## Usage:
 
 ```
-bouf
+bouf 0.X.X
 
 USAGE:
     bouf [OPTIONS] --config <Config file> --version <Major.Minor.Patch[-(rc|beta)Num]>
