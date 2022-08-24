@@ -74,7 +74,10 @@ pub fn normalize_path(path: &Path) -> PathBuf {
     ret
 }
 
-/// Attempt to create canonical path
+/// Attempt to create a canonical path from a relative one where some elements may not exist (yet).
+/// This works by searching for the longest chain of components of the specified path that does
+/// exist, then appending the remaining ones.
+/// For instance, the output folder may not exist, but we may still want an absolute path to it.
 pub fn recursive_canonicalize(path: &PathBuf) -> PathBuf {
     let mut out_path = PathBuf::new();
 
@@ -105,6 +108,9 @@ fn check_for_command(name: &str) -> Result<(), SomeError> {
     Ok(())
 }
 
+/// Checks if a binary path is valid, alternatively falls back to
+/// checking if the specified string exists as a binary in $PATH/%PATH%
+/// (This is probably bad for many cases, but here it makes sense I swear)
 pub fn check_binary_path(path: &mut PathBuf) -> Result<(), SomeError> {
     if fs::metadata(&path).is_ok() {
         return Ok(());
