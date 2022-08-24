@@ -1,4 +1,7 @@
 use serde::{Deserialize, Serialize};
+use std::fs::File;
+use std::io::Write;
+use std::path::PathBuf;
 
 use crate::models::config::ObsVersion;
 
@@ -55,5 +58,13 @@ impl Manifest {
         }
 
         Ok(res)
+    }
+
+    pub fn to_file(&self, filename: &PathBuf, pretty: bool) -> Result<(), Box<dyn std::error::Error>> {
+        let mut f = File::create(filename)?;
+        let data = self.to_json(pretty)?;
+        f.write_all(&data.as_bytes())?;
+
+        Ok(())
     }
 }
