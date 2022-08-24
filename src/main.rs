@@ -16,16 +16,14 @@ use steps::prepare::Preparator;
 fn main() {
     let args: MainArgs = MainArgs::parse();
     let mut conf = Config::from_file(args.config.as_path());
-    conf.apply_args(&args);
 
     println!("[+] Verifying config validity...");
-    match conf.validate(true, true) {
-        Ok(_) => println!("[+] Config Ok!"),
-        Err(err) => {
-            println!("[!] Config invalid: {}", err);
-            exit(1)
-        }
-    };
+    if let Err(err) = conf.apply_args(&args) {
+        println!("[!] Config invalid: {}", err);
+        exit(1)
+    } else {
+        println!("[+] Config Ok!")
+    }
 
     println!("bouf process started with the following locations set:");
     println!(" - Input dir: {}", &conf.env.input_dir.display());

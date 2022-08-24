@@ -6,7 +6,8 @@ use toml;
 
 use crate::models::args::MainArgs;
 use crate::models::errors::SomeError;
-use crate::utils::{misc, sign};
+use crate::utils::misc;
+use crate::utils::sign::Signer;
 
 fn get_default_branch() -> String {
     String::from("stable")
@@ -152,7 +153,7 @@ impl Config {
         self.obs_version.rc = if rc_num > 0 { rc_num } else { ver_parsed.4 };
     }
 
-    pub fn apply_args(&mut self, args: &MainArgs) {
+    pub fn apply_args(&mut self, args: &MainArgs) -> Result<(), SomeError> {
         self.set_version(
             &args.version,
             args.beta.unwrap_or_default(),
@@ -182,6 +183,8 @@ impl Config {
             self.package.updater.private_key = Some(privkey.to_owned());
         }
         // Todo remaining args
+
+        self.validate(true, true)
     }
 
     pub fn validate(&mut self, check_binaries: bool, check_paths: bool) -> Result<(), SomeError> {
