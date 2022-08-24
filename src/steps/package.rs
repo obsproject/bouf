@@ -119,7 +119,8 @@ pub fn create_zips(conf: &Config) -> Result<(), Box<dyn std::error::Error>> {
     let pdb_zip_path = conf.env.output_dir.join(pdb_zip_name);
 
     run_sevenzip(&conf.env.sevenzip_path, &obs_path, &obs_zip_path)?;
-    if !conf.package.zip.skip_pdbs_for_prerelease {
+    let is_prerelease = conf.obs_version.rc > 0 || conf.obs_version.beta > 0 || !conf.obs_version.commit.is_empty();
+    if !(conf.package.zip.skip_pdbs_for_prerelease && is_prerelease) {
         run_sevenzip(&conf.env.sevenzip_path, &pdb_path, &pdb_zip_path)?;
     }
 
