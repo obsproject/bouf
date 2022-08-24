@@ -39,8 +39,6 @@ pub fn create_patch(old: &Path, new: &Path, patch: &Path) -> Result<FileInfo> {
 #[cfg(test)]
 mod bsdiff_tests {
     use super::*;
-    use crate::utils::hash::hash_file;
-    use std::io::Cursor;
 
     #[test]
     fn test_diff() {

@@ -82,8 +82,9 @@ mod rsa_tests {
         let signature_path = PathBuf::from("extra/test_files/in.txt.sig");
 
         // Try with key file
-        let key = load_key(&Some(key_path.to_owned())).unwrap();
-        sign_file(&key, &file_path);
+        let mut signer = Signer::init();
+        signer = signer.with_keyfile(&key_path);
+        signer.sign_file(&file_path).expect("Signing failed");
         let finfo = hash_file(&signature_path);
         assert_eq!(finfo.hash, "4aae469c5a90903a40f1757c7b50d38c5ddfb364");
 
@@ -91,8 +92,8 @@ mod rsa_tests {
         let b64_key = base64::encode(fs::read(key_path).unwrap());
         env::set_var("UPDATER_PRIVATE_KEY", b64_key);
 
-        let key = load_key(&None).unwrap();
-        sign_file(&key, &file_path);
+        let mut signer = Signer::init();
+        signer.sign_file(&file_path).expect("Signing failed");
         let finfo = hash_file(&signature_path);
         assert_eq!(finfo.hash, "4aae469c5a90903a40f1757c7b50d38c5ddfb364");
     }
