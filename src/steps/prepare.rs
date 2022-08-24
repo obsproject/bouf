@@ -7,178 +7,199 @@ use std::result::Result;
 use hashbrown::HashSet;
 use walkdir::{DirEntry, WalkDir};
 
-use crate::models::config::{CodesignOptions, CopyOptions, EnvOptions, StripPDBOptions};
+use crate::models::config::Config;
 use crate::models::errors;
 use crate::utils::codesign::sign;
 use crate::utils::misc;
 
-pub fn ensure_output_dir(out_path: &PathBuf, delete_old: bool) -> Result<(), Box<dyn std::error::Error>> {
-    let out_path = misc::normalize_path(&out_path);
-
-    if out_path.exists() && !out_path.read_dir()?.next().is_none() {
-        if !delete_old {
-            return Err(Box::new(errors::SomeError("Folder not empty".into())));
-        }
-        println!("[!] Deleting previous output dir...");
-        std::fs::remove_dir_all(&out_path)?;
-    }
-
-    std::fs::create_dir_all(&out_path)?;
-    Ok(())
+pub struct Preparator<'a> {
+    config: &'a Config,
+    input_path: PathBuf,
+    install_path: PathBuf,
+    pdbs_path: PathBuf,
 }
 
-pub fn copy(in_path: &PathBuf, out_path: &PathBuf, opts: &CopyOptions) -> Result<(), Box<dyn std::error::Error>> {
-    let out_path = misc::normalize_path(&out_path.join("install"));
-    let inp_path = misc::normalize_path(&in_path);
-    let mut overrides: HashSet<&String> = HashSet::new();
-    // Convert to hash set for fast lookup
-    opts.overrides.iter().for_each(|(obs_path, _)| {
-        overrides.insert(obs_path);
-    });
-
-    println!(
-        "[+] Copying build from \"{}\" to \"{}\"...",
-        inp_path.display(),
-        out_path.display()
-    );
-    std::fs::create_dir_all(&out_path)?;
-
-    // Walk dir, honor overrides where necessary
-    for file in WalkDir::new(&inp_path)
-        .into_iter()
-        .filter_map(Result::ok)
-        .filter(|e| !e.file_type().is_dir())
-    {
-        let file: DirEntry = file;
-        // Get a path relative to the input directory for lookup/copy path
-        let relative_path = file.path().strip_prefix(&inp_path).unwrap().to_str().unwrap();
-        let relative_path_str = String::from(relative_path).replace("\\", "/");
-        // Check against overrides
-        if overrides.contains(&relative_path_str) {
-            continue;
+impl<'a> Preparator<'a> {
+    pub fn init(conf: &'a Config) -> Self {
+        Self {
+            config: conf,
+            input_path: misc::normalize_path(&conf.env.input_dir),
+            install_path: misc::normalize_path(&conf.env.output_dir.join("install")),
+            pdbs_path: misc::normalize_path(&conf.env.output_dir.join("pdbs")),
         }
-        // Check relative path against excludes
-        if opts.excludes.iter().any(|x| relative_path_str.contains(x)) {
-            continue;
-        }
-        let file_path = out_path.join(relative_path);
-        // Ensure dir structure exists
-        if let Some(_parent) = file_path.parent() {
-            fs::create_dir_all(_parent)?;
-        }
-        fs::copy(file.path(), file_path)?;
     }
 
-    // Copy override files over
-    for (ins_path, ovr_path) in &opts.overrides {
-        if !fs::metadata(ovr_path).is_ok() {
-            panic!("Override file \"{}\" does not exist!", ovr_path)
+    /// Create/clear output directory
+    fn ensure_output_dir(&self) -> Result<(), Box<dyn std::error::Error>> {
+        if self.install_path.exists() && !self.install_path.read_dir()?.next().is_none() {
+            if !self.config.prepare.empty_output_dir {
+                return Err(Box::new(errors::SomeError("Folder not empty".into())));
+            }
+            println!("[!] Deleting previous output dir...");
+            std::fs::remove_dir_all(&self.install_path)?;
         }
 
-        let full_path = out_path.join(ins_path);
-        if let Some(_parent) = full_path.parent() {
-            fs::create_dir_all(_parent)?;
-        }
-        fs::copy(ovr_path, full_path)?;
+        std::fs::create_dir_all(&self.install_path)?;
+        Ok(())
     }
 
-    Ok(())
-}
+    /// Copy input files to "install" dir
+    fn copy(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let mut overrides: HashSet<&String> = HashSet::new();
+        // Convert to hash set for fast lookup
+        self.config.prepare.copy.overrides.iter().for_each(|(obs_path, _)| {
+            overrides.insert(obs_path);
+        });
 
-// Move PDBs (except excluded) to separate dir, then strip remaining ones
-pub fn strip_pdbs(
-    path: &PathBuf,
-    opts: &StripPDBOptions,
-    env: &EnvOptions,
-    copy_opts: &CopyOptions,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let inp_path = misc::normalize_path(&path.join("install"));
-    let out_path = misc::normalize_path(&path.join("pdbs"));
+        println!(
+            "[+] Copying build from \"{}\" to \"{}\"...",
+            self.input_path.display(),
+            self.install_path.display()
+        );
+        std::fs::create_dir_all(&self.install_path)?;
 
-    println!(
-        "[+] Copying/stripping PDBs from \"{}\" to \"{}\"...",
-        inp_path.display(),
-        out_path.display()
-    );
-
-    for file in WalkDir::new(&inp_path)
-        .into_iter()
-        .filter_map(Result::ok)
-        .filter(|e| !e.file_type().is_dir())
-    {
-        let file: DirEntry = file;
-        let relative_path = file.path().strip_prefix(&inp_path).unwrap().to_str().unwrap();
-        if !relative_path.ends_with(".pdb") {
-            continue;
-        }
-        let relative_path_str = String::from(relative_path).replace("\\", "/");
-        let new_path = out_path.join(relative_path);
-        if let Some(_parent) = new_path.parent() {
-            fs::create_dir_all(_parent)?;
-        }
-        // Skip files excluded or that were overrides
-        if opts.exclude.iter().any(|x| relative_path_str.contains(x))
-            || copy_opts.overrides.iter().any(|(p, _)| relative_path_str == *p)
+        // Walk dir, honor overrides where necessary
+        for file in WalkDir::new(&self.input_path)
+            .into_iter()
+            .filter_map(Result::ok)
+            .filter(|e| !e.file_type().is_dir())
         {
-            fs::copy(file.path(), &new_path)?;
-            continue;
+            let file: DirEntry = file;
+            // Get a path relative to the input directory for lookup/copy path
+            let relative_path = file.path().strip_prefix(&self.input_path).unwrap().to_str().unwrap();
+            let relative_path_str = String::from(relative_path).replace("\\", "/");
+            // Check against overrides
+            if overrides.contains(&relative_path_str) {
+                continue;
+            }
+            // Check relative path against excludes
+            if self
+                .config
+                .prepare
+                .copy
+                .excludes
+                .iter()
+                .any(|x| relative_path_str.contains(x))
+            {
+                continue;
+            }
+            let file_path = self.install_path.join(relative_path);
+            // Ensure dir structure exists
+            if let Some(_parent) = file_path.parent() {
+                fs::create_dir_all(_parent)?;
+            }
+            fs::copy(file.path(), file_path)?;
         }
 
-        fs::rename(file.path(), &new_path)?;
+        // Copy override files over
+        for (ins_path, ovr_path) in &self.config.prepare.copy.overrides {
+            if !fs::metadata(ovr_path).is_ok() {
+                panic!("Override file \"{}\" does not exist!", ovr_path)
+            }
 
-        // Finally, run PDBCopy
-        Command::new(&env.pdbcopy_path)
-            .args([new_path.as_os_str(), file.path().as_os_str(), OsStr::new("-p")])
-            .output()
-            .expect("failed to run pdbcopy");
-    }
-    Ok(())
-}
-
-// Sign all eligible files in a folder using Signtool
-#[cfg(target_os = "windows")]
-pub fn codesign(
-    path: &PathBuf,
-    sign_opts: &CodesignOptions,
-    copy_opts: &CopyOptions,
-) -> Result<(), Box<dyn std::error::Error>> {
-    if sign_opts.skip_sign {
-        return Ok(());
-    }
-    let inp_path = misc::normalize_path(&path.join("install"));
-
-    println!("[+] Signing files in \"{}\"", inp_path.display());
-    let mut to_sign: Vec<PathBuf> = Vec::new();
-
-    for file in WalkDir::new(&inp_path)
-        .into_iter()
-        .filter_map(Result::ok)
-        .filter(|e| !e.file_type().is_dir())
-    {
-        let file: DirEntry = file;
-        let relative_path = file.path().to_str().unwrap();
-        if !sign_opts.sign_exts.iter().any(|x| relative_path.ends_with(x.as_str())) {
-            continue;
+            let full_path = self.install_path.join(ins_path);
+            if let Some(_parent) = full_path.parent() {
+                fs::create_dir_all(_parent)?;
+            }
+            fs::copy(ovr_path, full_path)?;
         }
-        // Do not re-sign files that were copied
-        let relative_path_str = String::from(relative_path).replace("\\", "/");
-        if copy_opts.overrides.iter().any(|(p, _)| relative_path_str == *p) {
-            continue;
-        }
-        to_sign.push(file.path().canonicalize()?)
+
+        Ok(())
     }
-    sign(to_sign, &sign_opts)?;
 
-    Ok(())
-}
+    /// Move PDBs (except excluded) to separate dir, then strip remaining ones
+    fn strip_pdbs(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let opts = &self.config.prepare.strip_pdbs;
+        let copy_opts = &self.config.prepare.copy;
 
-#[cfg(target_os = "linux")]
-pub fn codesign(
-    path: &PathBuf,
-    sign_opts: &CodesignOptions,
-    copy_opts: &CopyOptions,
-) -> Result<(), Box<dyn std::error::Error>> {
-    println!("Codesigning is not (yet) supported on this platform.");
+        println!(
+            "[+] Copying/stripping PDBs from \"{}\" to \"{}\"...",
+            self.install_path.display(),
+            self.pdbs_path.display()
+        );
 
-    Ok(())
+        for file in WalkDir::new(&self.install_path)
+            .into_iter()
+            .filter_map(Result::ok)
+            .filter(|e| !e.file_type().is_dir())
+        {
+            let file: DirEntry = file;
+            let relative_path = file.path().strip_prefix(&self.install_path).unwrap().to_str().unwrap();
+            if !relative_path.ends_with(".pdb") {
+                continue;
+            }
+            let relative_path_str = String::from(relative_path).replace("\\", "/");
+            let new_path = self.pdbs_path.join(relative_path);
+            if let Some(_parent) = new_path.parent() {
+                fs::create_dir_all(_parent)?;
+            }
+            // Skip files excluded or that were overrides
+            if opts.exclude.iter().any(|x| relative_path_str.contains(x))
+                || copy_opts.overrides.iter().any(|(p, _)| relative_path_str == *p)
+            {
+                fs::copy(file.path(), &new_path)?;
+                continue;
+            }
+
+            fs::rename(file.path(), &new_path)?;
+
+            // Finally, run PDBCopy
+            Command::new(&self.config.env.pdbcopy_path)
+                .args([new_path.as_os_str(), file.path().as_os_str(), OsStr::new("-p")])
+                .output()
+                .expect("failed to run pdbcopy");
+        }
+        Ok(())
+    }
+
+    /// Sign all eligible files in a folder using Signtool
+    #[cfg(target_os = "windows")]
+    fn codesign(&self) -> Result<(), Box<dyn std::error::Error>> {
+        if self.config.prepare.codesign.skip_sign {
+            return Ok(());
+        }
+
+        let exts = &self.config.prepare.codesign.sign_exts;
+        let overrides = &self.config.prepare.copy.overrides;
+
+        println!("[+] Signing files in \"{}\"", self.install_path.display());
+        let mut to_sign: Vec<PathBuf> = Vec::new();
+
+        for file in WalkDir::new(&self.install_path)
+            .into_iter()
+            .filter_map(Result::ok)
+            .filter(|e| !e.file_type().is_dir())
+        {
+            let file: DirEntry = file;
+            let relative_path = file.path().to_str().unwrap();
+
+            if !exts.iter().any(|x| relative_path.ends_with(x.as_str())) {
+                continue;
+            }
+            // Do not re-sign files that were copied
+            let relative_path_str = String::from(relative_path).replace("\\", "/");
+            if overrides.iter().any(|(p, _)| relative_path_str == *p) {
+                continue;
+            }
+            to_sign.push(file.path().canonicalize()?)
+        }
+        sign(to_sign, &self.config.prepare.codesign)?;
+
+        Ok(())
+    }
+
+    #[cfg(target_os = "linux")]
+    fn codesign(&self) -> Result<(), Box<dyn std::error::Error>> {
+        println!("Codesigning is not (yet) supported on this platform.");
+        Ok(())
+    }
+
+    pub fn run(self) -> Result<(), Box<dyn std::error::Error>> {
+        self.ensure_output_dir()?;
+        self.copy()?;
+        self.codesign()?;
+        self.strip_pdbs()?;
+
+        Ok(())
+    }
 }

@@ -10,6 +10,7 @@ use models::args::MainArgs;
 use models::config::Config;
 use models::manifest::Manifest;
 use steps::generate::Generator;
+use steps::prepare::Preparator;
 
 fn main() {
     let args: MainArgs = MainArgs::parse();
@@ -26,27 +27,19 @@ fn main() {
     };
 
     println!("bouf process started with the following locations set:");
-    println!(" - Input dir: {}", &conf.env.input_dir.to_str().unwrap());
-    println!(" - Previous versions dir: {}", &conf.env.previous_dir.to_str().unwrap());
-    println!(" - Output dir: {}", &conf.env.output_dir.to_str().unwrap());
+    println!(" - Input dir: {}", &conf.env.input_dir.display());
+    println!(" - Previous versions dir: {}", &conf.env.previous_dir.display());
+    println!(" - Output dir: {}", &conf.env.output_dir.display());
 
     if !args.skip_preparation {
-        steps::prepare::ensure_output_dir(&conf.env.output_dir, args.clear_output)
-            .expect("Failed ensuring output dir exists/is empty.");
-        // Copy build to "install"  dir
-        steps::prepare::copy(&conf.env.input_dir, &conf.env.output_dir, &conf.prepare.copy)
-            .expect("Failed copying new build!");
-        // Codesign files
-        steps::prepare::codesign(&conf.env.output_dir, &conf.prepare.codesign, &conf.prepare.copy)
-            .expect("Failed to run codesigning");
-        // Move/Strip PDBs
-        steps::prepare::strip_pdbs(
-            &conf.env.output_dir,
-            &conf.prepare.strip_pdbs,
-            &conf.env,
-            &conf.prepare.copy,
-        )
-        .expect("Failed to strip PDBs");
+        let prep = Preparator::init(&conf);
+        match prep.run() {
+            Ok(_) => (),
+            Err(err) => {
+                println!("[!] Preparation failed: {}", err);
+                exit(1)
+            }
+        }
     } else {
         println!("[*] Skipp preparation, this will also disable installer/zip creation.")
     }

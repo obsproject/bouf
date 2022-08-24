@@ -53,6 +53,7 @@ pub struct EnvOptions {
 #[derive(Deserialize, Default)]
 #[serde(default)]
 pub struct PreparationOptions {
+    pub empty_output_dir: bool,
     pub copy: CopyOptions,
     pub codesign: CodesignOptions,
     pub strip_pdbs: StripPDBOptions,
@@ -173,6 +174,7 @@ impl Config {
             self.obs_version.commit = commit.replace("g", "");
         }
 
+        self.prepare.empty_output_dir = args.clear_output;
         self.prepare.codesign.skip_sign = args.skip_codesigning || self.prepare.codesign.skip_sign;
         self.package.installer.skip_sign = args.skip_codesigning || self.package.installer.skip_sign;
         self.package.updater.skip_sign = args.skip_manifest_signing || self.package.updater.skip_sign;
