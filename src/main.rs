@@ -32,15 +32,12 @@ fn main() {
 
     if !args.skip_preparation {
         let prep = Preparator::init(&conf);
-        match prep.run() {
-            Ok(_) => (),
-            Err(err) => {
-                println!("[!] Preparation failed: {}", err);
-                exit(1)
-            }
+        if let Err(err) = prep.run() {
+            println!("[!] Preparation failed: {}", err);
+            exit(1)
         }
     } else {
-        println!("[*] Skipp preparation, this will also disable installer/zip creation.")
+        println!("[*] Skipped preparation, this will also disable installer/zip creation.")
     }
 
     // Create deltas and manifest
@@ -49,11 +46,11 @@ fn main() {
     let generator = Generator::init(&conf, !args.skip_preparation);
 
     match generator.run(args.skip_patches) {
-        Ok(_manifest) => manifest = _manifest,
         Err(err) => {
             println!("[!] Error during generator run: {}", err);
             exit(1)
         }
+        Ok(_manifest) => manifest = _manifest,
     }
 
     // Create NSIS/ZIP
@@ -109,14 +106,12 @@ fn main() {
         }
     }
 
-    if !args.skip_preparation {
-        if conf.post.copy_to_old {
-            println!("[+] Copying install dir to previous version directory...");
-            let res = steps::post::copy_to_old(&conf);
-            if let Err(e) = res {
-                println!("[!] Copying files failed: {}", e);
-                exit(1)
-            }
+    if !args.skip_preparation && conf.post.copy_to_old {
+        println!("[+] Copying install dir to previous version directory...");
+        let res = steps::post::copy_to_old(&conf);
+        if let Err(e) = res {
+            println!("[!] Copying files failed: {}", e);
+            exit(1)
         }
     }
 
