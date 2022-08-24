@@ -1,5 +1,4 @@
 use std::ffi::OsString;
-use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use std::process::Command;
@@ -151,18 +150,21 @@ fn run_pandoc(path: &PathBuf, env: &EnvOptions) -> Result<String, Box<dyn std::e
 }
 
 pub fn finalise_manifest(conf: &Config, manifest: &mut Manifest) -> Result<PathBuf, Box<dyn std::error::Error>> {
-    let manifest_filename = format!("manifest_{}.json", conf.env.branch);
-    let manifest_file = conf.env.output_dir.join(manifest_filename);
+    let manifest_filename: String;
+    if conf.env.branch.is_empty() {
+        manifest_filename = String::from("manifest.json");
+    } else {
+        manifest_filename = format!("manifest_{}.json", conf.env.branch);
+    }
+
+    let manifest_path = conf.env.output_dir.join(manifest_filename);
 
     // Add VC hash
     let hash = hash_file(&conf.package.updater.vc_redist_path);
     manifest.vc2019_redist_x64 = hash.hash;
     // Add notes
     manifest.notes = run_pandoc(&conf.package.updater.notes_files, &conf.env)?;
+    manifest.to_file(&manifest_path, conf.package.updater.pretty_json)?;
 
-    let manifest_json = manifest.to_json(conf.package.updater.pretty_json)?;
-    let mut f = File::create(manifest_file.as_path())?;
-    f.write_all(&manifest_json.as_bytes())?;
-
-    Ok(manifest_file)
+    Ok(manifest_path)
 }
