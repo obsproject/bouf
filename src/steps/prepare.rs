@@ -7,9 +7,9 @@ use std::result::Result;
 use hashbrown::HashSet;
 use walkdir::{DirEntry, WalkDir};
 
+use crate::models::config::{CodesignOptions, CopyOptions, EnvOptions, StripPDBOptions};
+use crate::models::errors;
 use crate::utils::codesign::sign;
-use crate::utils::config::{CodesignOptions, CopyOptions, EnvOptions, StripPDBOptions};
-use crate::utils::errors;
 use crate::utils::misc;
 
 pub fn ensure_output_dir(out_path: &PathBuf, delete_old: bool) -> Result<(), Box<dyn std::error::Error>> {

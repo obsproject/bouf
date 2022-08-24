@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 use serde::Deserialize;
 use toml;
 
-use crate::utils::args::MainArgs;
-use crate::utils::errors::SomeError;
+use crate::models::args::MainArgs;
+use crate::models::errors::SomeError;
 use crate::utils::{misc, sign};
 
 fn get_default_branch() -> String {
@@ -127,6 +127,7 @@ pub struct ZipOptions {
 #[serde(default)]
 pub struct UpdaterOptions {
     pub skip_sign: bool,
+    pub pretty_json: bool,
     pub notes_files: PathBuf,
     pub updater_path: PathBuf,
     pub private_key: Option<PathBuf>,

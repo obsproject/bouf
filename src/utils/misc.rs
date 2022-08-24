@@ -2,8 +2,8 @@ use std::fs;
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 
-use crate::utils::config::ObsVersion;
-use crate::utils::errors::SomeError;
+use crate::models::config::ObsVersion;
+use crate::models::errors::SomeError;
 
 pub fn parse_version(version_string: &String) -> (u8, u8, u8, u8, u8) {
     let parts: Vec<&str> = version_string.split("-").collect();

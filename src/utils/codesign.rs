@@ -4,8 +4,8 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use crate::utils::config::CodesignOptions;
-use crate::utils::errors::SomeError;
+use crate::models::config::CodesignOptions;
+use crate::models::errors::SomeError;
 
 #[cfg(target_os = "windows")]
 use winreg::enums::{HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_32KEY};

@@ -1,6 +1,6 @@
-use core::fmt::Write;
+use std::fmt::Write;
 use std::fs::File;
-use std::io::Read;
+use std::io::{BufReader, Read, Write as IoWrite};
 use std::path::{Path, PathBuf};
 
 #[cfg(target_os = "linux")]
@@ -113,6 +113,36 @@ pub fn get_dir_hashes(path: &PathBuf, cache: Option<HashMap<String, FileInfo>>) 
         .for_each(|(f_path, fileinfo)| {
             *fileinfo = hash_file(path.join(Path::new(f_path)).as_path());
         });
+
+    hashes
+}
+
+/// Create a list of file hashes in a directory, loading existing results from a
+/// "cache.json" file inside that directory (if it exists)
+/// Error reading/writing a cache file are ignored.
+pub fn get_dir_hashes_cache(path: &PathBuf) -> HashMap<String, FileInfo> {
+    let cache_file = path.join("cache.json");
+
+    let cache: Option<HashMap<String, FileInfo>> = File::open(cache_file.as_path()).ok().and_then(|f| {
+        let reader = BufReader::new(f);
+        serde_json::from_reader(reader).ok()
+    });
+
+    if cache.is_none() {
+        println!("[!] No cache found.");
+    }
+
+    let hashes = get_dir_hashes(path, cache);
+
+    let file_written = serde_json::to_string_pretty(&hashes).ok().and_then(|j| {
+        File::create(cache_file.as_path())
+            .ok()
+            .and_then(|mut f: File| f.write_all(&j.as_bytes()).ok())
+    });
+
+    if file_written.is_none() {
+        println!("[!] Cache could not be written")
+    }
 
     hashes
 }

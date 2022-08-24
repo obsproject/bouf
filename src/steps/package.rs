@@ -5,12 +5,10 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::result::Result;
 
-use serde_json;
-
-use crate::steps::generate::Manifest;
+use crate::models::config::{Config, EnvOptions};
+use crate::models::errors::SomeError;
+use crate::models::manifest::Manifest;
 use crate::utils::codesign::sign;
-use crate::utils::config::{Config, EnvOptions};
-use crate::utils::errors::SomeError;
 use crate::utils::hash::hash_file;
 use crate::utils::misc;
 
@@ -161,9 +159,9 @@ pub fn finalise_manifest(conf: &Config, manifest: &mut Manifest) -> Result<PathB
     // Add notes
     manifest.notes = run_pandoc(&conf.package.updater.notes_files, &conf.env)?;
 
-    let json_str = serde_json::to_string_pretty(&manifest)?;
+    let manifest_json = manifest.to_json(conf.package.updater.pretty_json)?;
     let mut f = File::create(manifest_file.as_path())?;
-    f.write_all(&json_str.as_bytes())?;
+    f.write_all(&manifest_json.as_bytes())?;
 
     Ok(manifest_file)
 }

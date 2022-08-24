@@ -1,12 +1,15 @@
 use std::process::exit;
 
+mod models;
 mod steps;
 mod utils;
 
 use clap::Parser;
 
-use crate::utils::args::MainArgs;
-use crate::utils::config::Config;
+use models::args::MainArgs;
+use models::config::Config;
+use models::manifest::Manifest;
+use steps::generate::Generator;
 
 fn main() {
     let args: MainArgs = MainArgs::parse();
@@ -50,7 +53,16 @@ fn main() {
 
     // Create deltas and manifest
     println!("[+] Creating manifest and patches...");
-    let mut manifest = steps::generate::create_manifest_and_patches(&conf, args.skip_patches, args.skip_preparation);
+    let mut manifest: Manifest;
+    let generator = Generator::init(&conf, !args.skip_preparation);
+
+    match generator.run(args.skip_patches) {
+        Ok(_manifest) => manifest = _manifest,
+        Err(err) => {
+            println!("[!] Error during generator run: {}", err);
+            exit(1)
+        }
+    }
 
     // Create NSIS/ZIP
     if !args.skip_installer && !args.skip_preparation {
