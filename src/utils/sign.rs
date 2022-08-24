@@ -5,34 +5,67 @@ use rsa::Hash::SHA2_512;
 use rsa::{pkcs8::DecodePrivateKey, PaddingScheme, RsaPrivateKey};
 use sha2::Digest;
 
-pub fn load_key(key_file: &Option<PathBuf>) -> Result<RsaPrivateKey, Box<dyn std::error::Error>> {
-    let pem: String;
-
-    if let Some(_path) = key_file {
-        pem = fs::read_to_string(_path)?;
-    } else {
-        let b64key = env::var("UPDATER_PRIVATE_KEY")?;
-        let decoded = base64::decode(b64key)?;
-        pem = String::from_utf8(decoded)?;
-    }
-
-    Ok(RsaPrivateKey::from_pkcs8_pem(pem.as_str())?)
+#[derive(Default)]
+pub struct Signer<'a> {
+    key_file: Option<&'a PathBuf>,
+    private_key: Option<RsaPrivateKey>,
 }
 
-pub fn sign_file(key: &RsaPrivateKey, path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
-    // Create digest
-    let data = fs::read(path)?;
-    let mut hasher = sha2::Sha512::new();
-    hasher.update(data);
-    let res = hasher.finalize();
-    let pad = PaddingScheme::PKCS1v15Sign { hash: Some(SHA2_512) };
-    let signature = key.sign(pad, &res)?;
+impl<'a> Signer<'a> {
+    pub fn init() -> Self {
+        Self { ..Default::default() }
+    }
 
-    let new_ext = format!("{}.sig", path.extension().unwrap().to_str().unwrap());
-    let signature_file = path.with_extension(new_ext);
-    fs::write(signature_file, signature)?;
+    pub fn with_keyfile(mut self, key_file: &'a PathBuf) -> Self {
+        self.key_file = Some(key_file);
+        self
+    }
 
-    Ok(())
+    fn load_key(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        let pem: String;
+
+        if let Some(_path) = &self.key_file {
+            pem = fs::read_to_string(_path)?;
+        } else {
+            let b64key = env::var("UPDATER_PRIVATE_KEY")?;
+            let decoded = base64::decode(b64key)?;
+            pem = String::from_utf8(decoded)?;
+        }
+
+        let pkey = RsaPrivateKey::from_pkcs8_pem(pem.as_str())?;
+        self.private_key = Some(pkey);
+
+        Ok(())
+    }
+
+    pub fn sign_file(&mut self, path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+        if self.private_key.is_none() {
+            self.load_key()?
+        }
+
+        // Create digest
+        let data = fs::read(path)?;
+        let mut hasher = sha2::Sha512::new();
+        hasher.update(data);
+        let res = hasher.finalize();
+        let pad = PaddingScheme::PKCS1v15Sign { hash: Some(SHA2_512) };
+        let signature = self.private_key.as_ref().unwrap().sign(pad, &res)?;
+
+        let new_ext = format!("{}.sig", path.extension().unwrap().to_str().unwrap());
+        let signature_file = path.with_extension(new_ext);
+        fs::write(signature_file, signature)?;
+
+        Ok(())
+    }
+
+    pub fn check_key(key_file: Option<&PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
+        let mut signer = Self { ..Default::default() };
+        if let Some(key_file) = key_file {
+            signer = signer.with_keyfile(key_file);
+        }
+
+        signer.load_key()
+    }
 }
 
 #[cfg(test)]

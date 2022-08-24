@@ -2,6 +2,7 @@
 
 use std::path::PathBuf;
 
+use crate::utils::sign::Signer;
 use clap::Parser;
 
 mod models;
@@ -21,10 +22,13 @@ struct Args {
 fn main() {
     let args: Args = Args::parse();
 
-    let key = utils::sign::load_key(&args.private_key).expect("Failed to load private key!");
+    let mut signer = Signer::init();
+    if let Some(key_file) = &args.private_key {
+        signer = signer.with_keyfile(key_file);
+    }
 
     for f in args.files {
         println!("Signing \"{}\"", f.display());
-        utils::sign::sign_file(&key, &f).expect("Failed to sign file!");
+        signer.sign_file(&f).expect("Failed to sign file!");
     }
 }

@@ -6,6 +6,7 @@ mod utils;
 
 use clap::Parser;
 
+use crate::utils::sign::Signer;
 use models::args::MainArgs;
 use models::config::Config;
 use models::manifest::Manifest;
@@ -100,14 +101,11 @@ fn main() {
 
     if !conf.package.updater.skip_sign {
         println!("[+] Signing manifest...");
-        let key = utils::sign::load_key(&conf.package.updater.private_key);
-        if let Err(e) = key {
-            println!("[!] Loading singing key failed: {}", e);
-            exit(1)
+        let mut signer = Signer::init();
+        if let Some(key_file) = &conf.package.updater.private_key {
+            signer = signer.with_keyfile(key_file);
         }
-
-        let res = utils::sign::sign_file(&key.unwrap(), &mf.unwrap());
-        if let Err(e) = res {
+        if let Err(e) = signer.sign_file(&mf.unwrap()) {
             println!("[!] Signing file failed: {}", e);
             exit(1)
         }

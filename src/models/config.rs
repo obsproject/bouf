@@ -194,7 +194,7 @@ impl Config {
         }
         // Check if private key is set correctly (if signing is enabled)
         if !self.package.updater.skip_sign {
-            if let Err(e) = sign::load_key(&self.package.updater.private_key) {
+            if let Err(e) = Signer::check_key(self.package.updater.private_key.as_ref()) {
                 return Err(SomeError(format!("Failed loading private key: {}", e)));
             }
         }
