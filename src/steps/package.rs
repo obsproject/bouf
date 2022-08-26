@@ -43,8 +43,6 @@ impl<'a> Packaging<'a> {
             format!("/DAPPVERSION={}", self.config.obs_version.version_str).into(),
             format!("/DSHORTVERSION={}", self.short_version).into(),
             format!("/DBUILDDIR={}", build_dir_str).into(),
-            "/DINSTALL64".into(),
-            "/DFULL".into(),
             nsis_script.to_owned().into_os_string(),
         ];
 
