@@ -11,75 +11,136 @@ use crate::utils::codesign::sign;
 use crate::utils::hash::hash_file;
 use crate::utils::misc;
 
-#[cfg(target_os = "windows")]
-pub fn run_nsis(conf: &Config) -> Result<(), Box<dyn std::error::Error>> {
-    // ToDo make installer name more configurable
-    let new_version = &conf.obs_version.version_str;
-    let tag_version = misc::get_filename_version(&conf.obs_version, false);
-    let short_version = misc::get_filename_version(&conf.obs_version, true);
-    let nsis_script = conf.package.installer.nsis_script.canonicalize()?;
+pub struct Packaging<'a> {
+    config: &'a Config,
+    short_version: String,
+    tag_version: String,
+}
 
-    // The build dir is the "install" subfolder in the output dir
-    let build_dir = conf.env.output_dir.join("install").canonicalize()?;
-    let mut build_dir_str = build_dir.into_os_string().into_string().unwrap();
-    // Sanitise build dir string for NSIS
-    if build_dir_str.starts_with("\\") {
-        build_dir_str = build_dir_str.strip_prefix("\\\\?\\").unwrap().to_string();
+impl<'a> Packaging<'a> {
+    pub fn init(conf: &'a Config) -> Self {
+        Self {
+            config: conf,
+            short_version: misc::get_filename_version(&conf.obs_version, true),
+            tag_version: misc::get_filename_version(&conf.obs_version, false),
+        }
     }
 
-    let args: Vec<OsString> = vec![
-        format!("/DTAGVERSION={}", tag_version).into(),
-        format!("/DAPPVERSION={}", new_version).into(),
-        format!("/DSHORTVERSION={}", short_version).into(),
-        format!("/DBUILDDIR={}", build_dir_str).into(),
-        "/DINSTALL64".into(),
-        "/DFULL".into(),
-        nsis_script.to_owned().into_os_string(),
-    ];
+    #[cfg(target_os = "windows")]
+    pub fn run_nsis(&self) -> Result<(), Box<dyn std::error::Error>> {
+        // ToDo make installer name more configurable
+        let nsis_script = self.config.package.installer.nsis_script.canonicalize()?;
+        // The build dir is the "install" subfolder in the output dir
+        let build_dir = self.config.env.output_dir.join("install").canonicalize()?;
+        let mut build_dir_str = build_dir.into_os_string().into_string().unwrap();
+        // Sanitise build dir string for NSIS
+        if build_dir_str.starts_with("\\") {
+            build_dir_str = build_dir_str.strip_prefix("\\\\?\\").unwrap().to_string();
+        }
 
-    println!(" => Running NSIS...");
-    let output = Command::new(&conf.env.makensis_path).args(args).output()?;
+        let args: Vec<OsString> = vec![
+            format!("/DTAGVERSION={}", self.tag_version).into(),
+            format!("/DAPPVERSION={}", self.config.obs_version.version_str).into(),
+            format!("/DSHORTVERSION={}", self.short_version).into(),
+            format!("/DBUILDDIR={}", build_dir_str).into(),
+            "/DINSTALL64".into(),
+            "/DFULL".into(),
+            nsis_script.to_owned().into_os_string(),
+        ];
 
-    if !output.status.success() {
-        println!("MakeNSIS returned non-success status: {}", output.status);
-        std::io::stdout().write_all(&output.stdout)?;
-        std::io::stderr().write_all(&output.stderr)?;
+        println!(" => Running NSIS...");
+        let output = Command::new(&self.config.env.makensis_path).args(args).output()?;
 
-        Err(Box::new(SomeError(
-            "MakeNSIS failed (see stdout/stderr for details)".to_string(),
-        )))
-    } else {
+        if !output.status.success() {
+            println!("MakeNSIS returned non-success status: {}", output.status);
+            std::io::stdout().write_all(&output.stdout)?;
+            std::io::stderr().write_all(&output.stderr)?;
+
+            Err(Box::new(SomeError(
+                "MakeNSIS failed (see stdout/stderr for details)".to_string(),
+            )))
+        } else {
+            println!("[+] NSIS completed successfully!");
+
+            if !self.config.package.installer.skip_sign {
+                self.sign_installer()?;
+                println!("[+] Installer signed successfully!");
+            }
+
+            Ok(())
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn run_nsis(&self) -> Result<(), Box<dyn std::error::Error>> {
+        println!("Creating an installer is not (yet) supported on this platform.");
+
         Ok(())
     }
-}
 
-#[cfg(target_os = "linux")]
-pub fn run_nsis(conf: &Config) -> Result<(), Box<dyn std::error::Error>> {
-    println!("Creating an installer is not (yet) supported on this platform.");
+    #[cfg(target_os = "windows")]
+    fn sign_installer(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let filename = format!("OBS-Studio-{}-Full-Installer-x64.exe", self.short_version);
+        let path = self.config.env.output_dir.join(filename).canonicalize()?;
 
-    Ok(())
-}
+        println!("[+] Signing installer file \"{}\"", path.display());
+        let files: Vec<PathBuf> = vec![path];
+        sign(files, &self.config.prepare.codesign)?;
 
-#[cfg(target_os = "windows")]
-pub fn sign_installer(config: &Config) -> Result<(), Box<dyn std::error::Error>> {
-    let filename = format!(
-        "OBS-Studio-{}-Full-Installer-x64.exe",
-        misc::get_filename_version(&config.obs_version, true)
-    );
-    let path = config.env.output_dir.join(filename).canonicalize()?;
+        Ok(())
+    }
 
-    println!("[+] Signing installer file \"{}\"", path.display());
-    let files: Vec<PathBuf> = vec![path];
-    sign(files, &config.prepare.codesign)?;
+    #[cfg(target_os = "linux")]
+    fn sign_installer(&self) -> Result<(), Box<dyn std::error::Error>> {
+        println!("Singing an installer is not (yet) supported on this platform.");
 
-    Ok(())
-}
+        Ok(())
+    }
 
-#[cfg(target_os = "linux")]
-pub fn sign_installer(config: &Config) -> Result<(), Box<dyn std::error::Error>> {
-    println!("Singing an installer is not (yet) supported on this platform.");
+    pub fn create_zips(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let zip_name = self.config.package.zip.name.replace("{version}", &self.short_version);
+        let pdb_zip_name = self
+            .config
+            .package
+            .zip
+            .pdb_name
+            .replace("{version}", &self.short_version);
 
-    Ok(())
+        let obs_path = self.config.env.output_dir.join("install/*");
+        let pdb_path = self.config.env.output_dir.join("pdbs/*");
+        let obs_zip_path = self.config.env.output_dir.join(zip_name);
+        let pdb_zip_path = self.config.env.output_dir.join(pdb_zip_name);
+
+        run_sevenzip(&self.config.env.sevenzip_path, &obs_path, &obs_zip_path)?;
+        let is_prerelease = self.config.obs_version.rc > 0
+            || self.config.obs_version.beta > 0
+            || !self.config.obs_version.commit.is_empty();
+        if !(self.config.package.zip.skip_pdbs_for_prerelease && is_prerelease) {
+            run_sevenzip(&self.config.env.sevenzip_path, &pdb_path, &pdb_zip_path)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn finalise_manifest(&self, manifest: &mut Manifest) -> Result<PathBuf, Box<dyn std::error::Error>> {
+        let manifest_filename: String;
+        if self.config.env.branch.is_empty() {
+            manifest_filename = "manifest.json".to_string();
+        } else {
+            manifest_filename = format!("manifest_{}.json", self.config.env.branch);
+        }
+
+        let manifest_path = self.config.env.output_dir.join(manifest_filename);
+
+        // Add VC hash
+        let hash = hash_file(&self.config.package.updater.vc_redist_path);
+        manifest.vc2019_redist_x64 = hash.hash;
+        // Add notes
+        manifest.notes = run_pandoc(&self.config.package.updater.notes_files, &self.config.env)?;
+        manifest.to_file(&manifest_path, self.config.package.updater.pretty_json)?;
+
+        Ok(manifest_path)
+    }
 }
 
 fn run_sevenzip(sevenzip: &PathBuf, in_path: &PathBuf, out_path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
@@ -107,25 +168,6 @@ fn run_sevenzip(sevenzip: &PathBuf, in_path: &PathBuf, out_path: &PathBuf) -> Re
     }
 }
 
-pub fn create_zips(conf: &Config) -> Result<(), Box<dyn std::error::Error>> {
-    let short_version = misc::get_filename_version(&conf.obs_version, true);
-    let zip_name = conf.package.zip.name.replace("{version}", &short_version);
-    let pdb_zip_name = conf.package.zip.pdb_name.replace("{version}", &short_version);
-
-    let obs_path = conf.env.output_dir.join("install/*");
-    let pdb_path = conf.env.output_dir.join("pdbs/*");
-    let obs_zip_path = conf.env.output_dir.join(zip_name);
-    let pdb_zip_path = conf.env.output_dir.join(pdb_zip_name);
-
-    run_sevenzip(&conf.env.sevenzip_path, &obs_path, &obs_zip_path)?;
-    let is_prerelease = conf.obs_version.rc > 0 || conf.obs_version.beta > 0 || !conf.obs_version.commit.is_empty();
-    if !(conf.package.zip.skip_pdbs_for_prerelease && is_prerelease) {
-        run_sevenzip(&conf.env.sevenzip_path, &pdb_path, &pdb_zip_path)?;
-    }
-
-    Ok(())
-}
-
 fn run_pandoc(path: &PathBuf, env: &EnvOptions) -> Result<String, Box<dyn std::error::Error>> {
     let args: Vec<OsString> = vec![
         "--from".into(),
@@ -147,24 +189,4 @@ fn run_pandoc(path: &PathBuf, env: &EnvOptions) -> Result<String, Box<dyn std::e
     } else {
         Ok(String::from_utf8(output.stdout)?)
     }
-}
-
-pub fn finalise_manifest(conf: &Config, manifest: &mut Manifest) -> Result<PathBuf, Box<dyn std::error::Error>> {
-    let manifest_filename: String;
-    if conf.env.branch.is_empty() {
-        manifest_filename = String::from("manifest.json");
-    } else {
-        manifest_filename = format!("manifest_{}.json", conf.env.branch);
-    }
-
-    let manifest_path = conf.env.output_dir.join(manifest_filename);
-
-    // Add VC hash
-    let hash = hash_file(&conf.package.updater.vc_redist_path);
-    manifest.vc2019_redist_x64 = hash.hash;
-    // Add notes
-    manifest.notes = run_pandoc(&conf.package.updater.notes_files, &conf.env)?;
-    manifest.to_file(&manifest_path, conf.package.updater.pretty_json)?;
-
-    Ok(manifest_path)
 }

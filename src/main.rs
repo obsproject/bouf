@@ -6,6 +6,7 @@ mod utils;
 
 use clap::Parser;
 
+use crate::steps::package::Packaging;
 use crate::utils::sign::Signer;
 use models::args::MainArgs;
 use models::config::Config;
@@ -53,20 +54,13 @@ fn main() {
         Ok(_manifest) => manifest = _manifest,
     }
 
+    let packager = Packaging::init(&conf);
     // Create NSIS/ZIP
     if !args.skip_installer && !args.skip_preparation {
         println!("[+] Creating Installer");
-        if let Err(e) = steps::package::run_nsis(&conf) {
-            println!("[!] NSIS failed: {}", e);
+        if let Err(e) = packager.run_nsis() {
+            println!("[!] NSIS creation/signing failed: {}", e);
             exit(1)
-        }
-        println!("[+] NSIS completed successfully!");
-
-        if !conf.package.installer.skip_sign {
-            if let Err(e) = steps::package::sign_installer(&conf) {
-                println!("[!] Signing installer failed: {}", e);
-            }
-            println!("[+] Installer signed successfully!");
         }
     } else {
         println!("[*] Skipping installer creation...")
@@ -75,20 +69,18 @@ fn main() {
     if !args.skip_preparation {
         // Create PDB and install folder ZIPs
         println!("[+] Creating zip files...");
-        match steps::package::create_zips(&conf) {
-            Ok(_) => println!("[+] ZIP files created successfully!"),
-            Err(err) => {
-                println!("[!] Creating zip files failed: {}", err);
-                exit(1)
-            }
+        if let Err(err) = packager.create_zips() {
+            println!("[!] Creating zip files failed: {}", err);
+            exit(1)
         }
+        println!("[+] ZIP files created successfully!")
     } else {
         println!("[*] Skipping ZIP creation as preparation was skipped...")
     }
 
     // Sign manifest if it was created
     println!("[+] Finalising manifest...");
-    let mf = steps::package::finalise_manifest(&conf, &mut manifest);
+    let mf = packager.finalise_manifest(&mut manifest);
     if let Err(e) = mf {
         println!("[!] Finalising manifest failed: {}", e);
         exit(1)
