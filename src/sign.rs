@@ -22,10 +22,7 @@ struct Args {
 fn main() {
     let args: Args = Args::parse();
 
-    let mut signer = Signer::init();
-    if let Some(key_file) = &args.private_key {
-        signer = signer.with_keyfile(key_file);
-    }
+    let mut signer = Signer::init(args.private_key.as_ref());
 
     for f in args.files {
         println!("Signing \"{}\"", f.display());

@@ -12,13 +12,11 @@ pub struct Signer<'a> {
 }
 
 impl<'a> Signer<'a> {
-    pub fn init() -> Self {
-        Self { ..Default::default() }
-    }
-
-    pub fn with_keyfile(mut self, key_file: &'a PathBuf) -> Self {
-        self.key_file = Some(key_file);
-        self
+    pub fn init(key_file: Option<&'a PathBuf>) -> Self {
+        Self {
+            key_file: key_file,
+            ..Default::default()
+        }
     }
 
     fn load_key(&mut self) -> Result<(), Box<dyn std::error::Error>> {
@@ -58,11 +56,11 @@ impl<'a> Signer<'a> {
         Ok(())
     }
 
-    pub fn check_key(key_file: Option<&PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
-        let mut signer = Self { ..Default::default() };
-        if let Some(key_file) = key_file {
-            signer = signer.with_keyfile(key_file);
-        }
+    pub fn check_key(key_file: Option<&'a PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
+        let mut signer = Self {
+            key_file: key_file,
+            ..Default::default()
+        };
 
         signer.load_key()
     }
@@ -82,8 +80,7 @@ mod rsa_tests {
         let signature_path = PathBuf::from("extra/test_files/in.txt.sig");
 
         // Try with key file
-        let mut signer = Signer::init();
-        signer = signer.with_keyfile(&key_path);
+        let mut signer = Signer::init(Some(&key_path));
         signer.sign_file(&file_path).expect("Signing failed");
         let finfo = hash_file(&signature_path);
         assert_eq!(finfo.hash, "4aae469c5a90903a40f1757c7b50d38c5ddfb364");
@@ -92,7 +89,7 @@ mod rsa_tests {
         let b64_key = base64::encode(fs::read(key_path).unwrap());
         env::set_var("UPDATER_PRIVATE_KEY", b64_key);
 
-        let mut signer = Signer::init();
+        let mut signer = Signer::init(None);
         signer.sign_file(&file_path).expect("Signing failed");
         let finfo = hash_file(&signature_path);
         assert_eq!(finfo.hash, "4aae469c5a90903a40f1757c7b50d38c5ddfb364");

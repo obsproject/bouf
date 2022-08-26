@@ -96,10 +96,7 @@ fn main() {
 
     if !conf.package.updater.skip_sign {
         println!("[+] Signing manifest...");
-        let mut signer = Signer::init();
-        if let Some(key_file) = &conf.package.updater.private_key {
-            signer = signer.with_keyfile(key_file);
-        }
+        let mut signer = Signer::init(conf.package.updater.private_key.as_ref());
         if let Err(e) = signer.sign_file(&mf.unwrap()) {
             println!("[!] Signing file failed: {}", e);
             exit(1)
