@@ -249,8 +249,6 @@ Section "OBS Studio" SecCore
 
 	; Set Section Files and Shortcuts
 	SetOutPath "$INSTDIR"
-	OBSInstallerUtils::KillProcess "obs-plugins\32bit\cef-bootstrap.exe"
-	OBSInstallerUtils::KillProcess "obs-plugins\64bit\cef-bootstrap.exe"
 
 	File /r "${BUILDDIR}\data"
 
@@ -284,10 +282,8 @@ Section "OBS Studio" SecCore
 	SetOutPath "$INSTDIR"
 	File /r "${BUILDDIR}\data"
 	SetOutPath "$INSTDIR\obs-plugins"
-	OBSInstallerUtils::KillProcess "32bit\cef-bootstrap.exe"
 	OBSInstallerUtils::KillProcess "32bit\obs-browser-page.exe"
 	${if} ${RunningX64}
-		OBSInstallerUtils::KillProcess "64bit\cef-bootstrap.exe"
 		OBSInstallerUtils::KillProcess "64bit\obs-browser-page.exe"
 	${endif}
 	File /r "${BUILDDIR}\obs-plugins\64bit"
