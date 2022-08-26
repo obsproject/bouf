@@ -40,18 +40,9 @@ ManifestDPIAware true
 
 ; Main Install settings
 Name "${APPNAMEANDVERSION}"
-!ifdef INSTALL64
 InstallDir "$PROGRAMFILES64\obs-studio"
-!else
-InstallDir "$PROGRAMFILES32\obs-studio"
-!endif
 InstallDirRegKey HKLM "Software\${APPNAME}" ""
-
-!ifdef INSTALL64
- OutFile "${BUILDDIR}\..\OBS-Studio-${SHORTVERSION}-Full-Installer-x64.exe"
-!else
- OutFile "${BUILDDIR}\..\OBS-Studio-${SHORTVERSION}-Full-Installer-x86.exe"
-!endif
+OutFile "${BUILDDIR}\..\OBS-Studio-${SHORTVERSION}-Full-Installer-x64.exe"
 
 ; Use compression
 SetCompressor /SOLID LZMA
@@ -107,7 +98,6 @@ RequestExecutionLevel admin
 !insertmacro MUI_RESERVEFILE_LANGDLL
 
 Function PreReqCheck
-!ifdef INSTALL64
 	${if} ${RunningX64}
 	${Else}
 		IfSilent +1 +3
@@ -116,7 +106,6 @@ Function PreReqCheck
 		MessageBox MB_OK|MB_ICONSTOP "This version of ${APPNAME} is not compatible with your system. Please use the 32bit (x86) installer."
 	${EndIf}
 	; Abort on XP or lower
-!endif
 
 	${If} ${AtMostWinVista}
 		IfSilent +1 +3
@@ -218,13 +207,8 @@ Var dllFilesInUse
 
 Function checkDLLs
 	OBSInstallerUtils::ResetInUseFileChecks
-!ifdef INSTALL64
 	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\bin\64bit\avutil-56.dll"
 	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\bin\64bit\swscale-5.dll"
-!else
-	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\bin\32bit\avutil-56.dll"
-	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\bin\32bit\swscale-5.dll"
-!endif
 	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\data\obs-plugins\win-capture\graphics-hook32.dll"
 	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\data\obs-plugins\win-capture\graphics-hook64.dll"
 	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\data\obs-plugins\win-dshow\obs-virtualcam-module32.dll"
@@ -249,11 +233,7 @@ Function checkFilesInUse
 FunctionEnd
 
 Function LaunchOBS
-!ifdef INSTALL64
 	Exec '"$WINDIR\explorer.exe" "$SMPROGRAMS\OBS Studio\OBS Studio (64bit).lnk"'
-!else
-	Exec '"$WINDIR\explorer.exe" "$SMPROGRAMS\OBS Studio\OBS Studio (32bit).lnk"'
-!endif
 FunctionEnd
 
 Section "OBS Studio" SecCore
@@ -273,7 +253,6 @@ Section "OBS Studio" SecCore
 
 	File /r "${BUILDDIR}\data"
 
-!ifdef INSTALL64
 	SetOutPath "$INSTDIR\bin"
 	Delete "$INSTDIR\bin\64bit\Qt5*.*"
 	File /r "${BUILDDIR}\bin\64bit"
@@ -282,18 +261,7 @@ Section "OBS Studio" SecCore
 	Delete "$INSTDIR\obs-plugins\64bit\win-decklink*.*"
 	Delete "$INSTDIR\obs-plugins\64bit\win-mf*.*"
 	File /r "${BUILDDIR}\obs-plugins\64bit"
-!else
-	SetOutPath "$INSTDIR\bin"
-	Delete "$INSTDIR\bin\32bit\Qt5*.*"
-	File /r "${BUILDDIR}\bin\32bit"
-	SetOutPath "$INSTDIR\obs-plugins"
-	Delete "$INSTDIR\obs-plugins\32bit\decklink-ouput*.*"
-	Delete "$INSTDIR\obs-plugins\32bit\win-decklink*.*"
-	Delete "$INSTDIR\obs-plugins\32bit\win-mf*.*"
-	File /r "${BUILDDIR}\obs-plugins\32bit"
-!endif
 
-!ifdef INSTALL64
 	; 64 bit Visual Studio 2019 runtime check
 	ClearErrors
 	SetOutPath "$PLUGINSDIR"
@@ -307,21 +275,6 @@ Section "OBS Studio" SecCore
 		Delete "$PLUGINSDIR\VC_redist.x64.exe"
 	vs2019OK_64:
 	ClearErrors
-!else
-	; 32 bit Visual Studio 2019 runtime check
-	ClearErrors
-	SetOutPath "$PLUGINSDIR"
-	GetDLLVersion "vcruntime140.DLL" $R0 $R1
-	GetDLLVersion "msvcp140.DLL" $R0 $R1
-	GetDLLVersion "msvcp140_1.DLL" $R0 $R1
-	IfErrors vs2019Missing_32 vs2019OK_32
-	vs2019Missing_32:
-		File VC_redist.x86.exe
-		ExecWait '"$PLUGINSDIR\VC_redist.x86.exe" /quiet /norestart'
-		Delete "$PLUGINSDIR\VC_redist.x86.exe"
-	vs2019OK_32:
-	ClearErrors
-!endif
 
 	# ----------------------------
 
@@ -336,13 +289,8 @@ Section "OBS Studio" SecCore
 		OBSInstallerUtils::KillProcess "64bit\cef-bootstrap.exe"
 		OBSInstallerUtils::KillProcess "64bit\obs-browser-page.exe"
 	${endif}
-!ifdef INSTALL64
 	File /r "${BUILDDIR}\obs-plugins\64bit"
 	SetOutPath "$INSTDIR\bin\64bit"
-!else
-	File /r "${BUILDDIR}\obs-plugins\32bit"
-	SetOutPath "$INSTDIR\bin\32bit"
-!endif
 
 	# ----------------------------
 	# Copy game capture files to ProgramData
@@ -355,24 +303,13 @@ Section "OBS Studio" SecCore
 
 	WriteUninstaller "$INSTDIR\uninstall.exe"
 
-!ifdef INSTALL64
 	SetOutPath "$INSTDIR\bin\64bit"
 	CreateShortCut "$DESKTOP\OBS Studio.lnk" "$INSTDIR\bin\64bit\obs64.exe"
-!else
-	SetOutPath "$INSTDIR\bin\32bit"
-	CreateShortCut "$DESKTOP\OBS Studio.lnk" "$INSTDIR\bin\32bit\obs32.exe"
-!endif
 
 	CreateDirectory "$SMPROGRAMS\OBS Studio"
 
-!ifdef INSTALL64
 	SetOutPath "$INSTDIR\bin\64bit"
 	CreateShortCut "$SMPROGRAMS\OBS Studio\OBS Studio (64bit).lnk" "$INSTDIR\bin\64bit\obs64.exe"
-!else
-	SetOutPath "$INSTDIR\bin\32bit"
-	CreateDirectory "$SMPROGRAMS\OBS Studio"
-	CreateShortCut "$SMPROGRAMS\OBS Studio\OBS Studio (32bit).lnk" "$INSTDIR\bin\32bit\obs32.exe"
-!endif
 
 	CreateShortCut "$SMPROGRAMS\OBS Studio\Uninstall.lnk" "$INSTDIR\uninstall.exe"
 SectionEnd
@@ -422,11 +359,7 @@ Section -FinishSection
 	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayName" "${APPNAME}"
 	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "UninstallString" "$INSTDIR\uninstall.exe"
 	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "ProductID" "d16d2409-3151-4331-a9b1-dfd8cf3f0d9c"
-!ifdef INSTALL64
 	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayIcon" "$INSTDIR\bin\64bit\obs64.exe"
-!else
-	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayIcon" "$INSTDIR\bin\32bit\obs32.exe"
-!endif
 	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "Publisher" "OBS Project"
 	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "HelpLink" "https://obsproject.com"
 	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayVersion" "${APPVERSION}"
