@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use std::{env, fs};
 
+use anyhow::Result;
 use rsa::Hash::SHA2_512;
 use rsa::{pkcs8::DecodePrivateKey, PaddingScheme, RsaPrivateKey};
 use sha2::Digest;
@@ -19,7 +20,7 @@ impl<'a> Signer<'a> {
         }
     }
 
-    fn load_key(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    fn load_key(&mut self) -> Result<()> {
         let pem: String;
 
         if let Some(_path) = &self.key_file {
@@ -36,7 +37,7 @@ impl<'a> Signer<'a> {
         Ok(())
     }
 
-    pub fn sign_file(&mut self, path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn sign_file(&mut self, path: &PathBuf) -> Result<()> {
         if self.private_key.is_none() {
             self.load_key()?
         }
@@ -56,7 +57,7 @@ impl<'a> Signer<'a> {
         Ok(())
     }
 
-    pub fn check_key(key_file: Option<&'a PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn check_key(key_file: Option<&'a PathBuf>) -> Result<()> {
         let mut signer = Self {
             key_file: key_file,
             ..Default::default()

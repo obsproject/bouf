@@ -4,16 +4,16 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use crate::models::config::CodesignOptions;
-use crate::models::errors::SomeError;
-
+use anyhow::{anyhow, Context, Result};
 #[cfg(target_os = "windows")]
 use winreg::enums::{HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_32KEY};
 #[cfg(target_os = "windows")]
 use winreg::RegKey;
 
+use crate::models::config::CodesignOptions;
+
 #[cfg(target_os = "windows")]
-pub fn sign(files: Vec<PathBuf>, opts: &CodesignOptions) -> Result<(), Box<dyn std::error::Error>> {
+pub fn sign(files: Vec<PathBuf>, opts: &CodesignOptions) -> Result<()> {
     let signtool = locate_signtool()?;
 
     let mut args: Vec<OsString> = vec![
@@ -38,16 +38,14 @@ pub fn sign(files: Vec<PathBuf>, opts: &CodesignOptions) -> Result<(), Box<dyn s
         std::io::stdout().write_all(&output.stdout)?;
         std::io::stderr().write_all(&output.stderr)?;
 
-        Err(Box::new(SomeError(
-            "signtool failed (see stdout/stderr for details)".to_string(),
-        )))
+        Err(anyhow!("signtool failed (see stdout/stderr for details)"))
     } else {
         Ok(())
     }
 }
 
 #[cfg(target_os = "linux")]
-pub fn sign(files: Vec<PathBuf>, opts: &CodesignOptions) -> Result<(), Box<dyn std::error::Error>> {
+pub fn sign(files: Vec<PathBuf>, opts: &CodesignOptions) -> Result<()> {
     println!("Codesigning is not (yet) supported on this platform.");
 
     Ok(())
@@ -57,7 +55,7 @@ pub fn sign(files: Vec<PathBuf>, opts: &CodesignOptions) -> Result<(), Box<dyn s
 // But simplified to be 64-bit only, and slightly shittier error handling
 
 #[cfg(target_os = "windows")]
-fn locate_signtool() -> Result<PathBuf, SomeError> {
+fn locate_signtool() -> Result<PathBuf> {
     const INSTALLED_ROOTS_REGKEY_PATH: &str = r"SOFTWARE\Microsoft\Windows Kits\Installed Roots";
     const KITS_ROOT_REGVALUE_NAME: &str = r"KitsRoot10";
 
@@ -66,12 +64,12 @@ fn locate_signtool() -> Result<PathBuf, SomeError> {
     // Open 32-bit HKLM "Installed Roots" key
     let installed_roots_key = RegKey::predef(HKEY_LOCAL_MACHINE)
         .open_subkey_with_flags(installed_roots_key_path, KEY_READ | KEY_WOW64_32KEY)
-        .map_err(|_| format!("Error opening registry key: {}", INSTALLED_ROOTS_REGKEY_PATH))?;
+        .with_context(|| format!("Error opening registry key: {}", INSTALLED_ROOTS_REGKEY_PATH))?;
 
     // Get the Windows SDK root path
     let kits_root_10_path: String = installed_roots_key
         .get_value(KITS_ROOT_REGVALUE_NAME)
-        .map_err(|_| format!("Error getting {} value from registry!", KITS_ROOT_REGVALUE_NAME))?;
+        .with_context(|| format!("Error getting {} value from registry!", KITS_ROOT_REGVALUE_NAME))?;
 
     // Construct Windows SDK bin path
     let kits_root_10_bin_path = Path::new(&kits_root_10_path).join("bin");
@@ -103,5 +101,5 @@ fn locate_signtool() -> Result<PathBuf, SomeError> {
         }
     }
 
-    Err(SomeError("Signtool was not found!".to_string()))
+    Err(anyhow!("Signtool was not found!"))
 }

@@ -2,10 +2,10 @@ use std::ffi::OsString;
 use std::io::Write;
 use std::path::PathBuf;
 use std::process::Command;
-use std::result::Result;
+
+use anyhow::{anyhow, Result};
 
 use crate::models::config::{Config, EnvOptions};
-use crate::models::errors::SomeError;
 use crate::models::manifest::Manifest;
 use crate::utils::codesign::sign;
 use crate::utils::hash::hash_file;
@@ -27,7 +27,7 @@ impl<'a> Packaging<'a> {
     }
 
     #[cfg(target_os = "windows")]
-    pub fn run_nsis(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn run_nsis(&self) -> Result<()> {
         // ToDo make installer name more configurable
         let nsis_script = self.config.package.installer.nsis_script.canonicalize()?;
         // The build dir is the "install" subfolder in the output dir
@@ -54,9 +54,7 @@ impl<'a> Packaging<'a> {
             std::io::stdout().write_all(&output.stdout)?;
             std::io::stderr().write_all(&output.stderr)?;
 
-            Err(Box::new(SomeError(
-                "MakeNSIS failed (see stdout/stderr for details)".to_string(),
-            )))
+            Err(anyhow!("MakeNSIS failed (see stdout/stderr for details)"))
         } else {
             println!("[+] NSIS completed successfully!");
 
@@ -70,14 +68,14 @@ impl<'a> Packaging<'a> {
     }
 
     #[cfg(target_os = "linux")]
-    pub fn run_nsis(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn run_nsis(&self) -> Result<()> {
         println!("Creating an installer is not (yet) supported on this platform.");
 
         Ok(())
     }
 
     #[cfg(target_os = "windows")]
-    fn sign_installer(&self) -> Result<(), Box<dyn std::error::Error>> {
+    fn sign_installer(&self) -> Result<()> {
         let filename = format!("OBS-Studio-{}-Full-Installer-x64.exe", self.short_version);
         let path = self.config.env.output_dir.join(filename).canonicalize()?;
 
@@ -89,13 +87,13 @@ impl<'a> Packaging<'a> {
     }
 
     #[cfg(target_os = "linux")]
-    fn sign_installer(&self) -> Result<(), Box<dyn std::error::Error>> {
+    fn sign_installer(&self) -> Result<()> {
         println!("Singing an installer is not (yet) supported on this platform.");
 
         Ok(())
     }
 
-    pub fn create_zips(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn create_zips(&self) -> Result<()> {
         let zip_name = self.config.package.zip.name.replace("{version}", &self.short_version);
         let pdb_zip_name = self
             .config
@@ -120,7 +118,7 @@ impl<'a> Packaging<'a> {
         Ok(())
     }
 
-    pub fn finalise_manifest(&self, manifest: &mut Manifest) -> Result<PathBuf, Box<dyn std::error::Error>> {
+    pub fn finalise_manifest(&self, manifest: &mut Manifest) -> Result<PathBuf> {
         let manifest_filename: String;
         if self.config.env.branch.is_empty() {
             manifest_filename = "manifest.json".to_string();
@@ -141,7 +139,7 @@ impl<'a> Packaging<'a> {
     }
 }
 
-fn run_sevenzip(sevenzip: &PathBuf, in_path: &PathBuf, out_path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+fn run_sevenzip(sevenzip: &PathBuf, in_path: &PathBuf, out_path: &PathBuf) -> Result<()> {
     let args: Vec<OsString> = vec![
         "a".into(),
         "-r".into(),
@@ -158,15 +156,13 @@ fn run_sevenzip(sevenzip: &PathBuf, in_path: &PathBuf, out_path: &PathBuf) -> Re
         std::io::stdout().write_all(&output.stdout)?;
         std::io::stderr().write_all(&output.stderr)?;
 
-        Err(Box::new(SomeError(
-            "7-zip failed (see stdout/stderr for details)".to_string(),
-        )))
+        Err(anyhow!("7-zip failed (see stdout/stderr for details)"))
     } else {
         Ok(())
     }
 }
 
-fn run_pandoc(path: &PathBuf, env: &EnvOptions) -> Result<String, Box<dyn std::error::Error>> {
+fn run_pandoc(path: &PathBuf, env: &EnvOptions) -> Result<String> {
     let args: Vec<OsString> = vec![
         "--from".into(),
         "markdown".into(),
@@ -181,9 +177,7 @@ fn run_pandoc(path: &PathBuf, env: &EnvOptions) -> Result<String, Box<dyn std::e
         println!("pandoc returned non-success status: {}", output.status);
         std::io::stdout().write_all(&output.stdout)?;
         std::io::stderr().write_all(&output.stderr)?;
-        Err(Box::new(SomeError(
-            "pandoc failed (see stdout/stderr for details)".to_string(),
-        )))
+        Err(anyhow!("pandoc failed (see stdout/stderr for details)"))
     } else {
         Ok(String::from_utf8(output.stdout)?)
     }

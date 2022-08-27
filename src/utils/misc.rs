@@ -2,8 +2,9 @@ use std::fs;
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 
+use anyhow::{bail, Result};
+
 use crate::models::config::ObsVersion;
-use crate::models::errors::SomeError;
 
 /// Parses a version string such as "28.0.0-rc1" to version struct
 pub fn parse_version(version_string: &String) -> ObsVersion {
@@ -99,15 +100,12 @@ pub fn recursive_canonicalize(path: &PathBuf) -> PathBuf {
     out_path
 }
 
-fn check_for_command(name: &str) -> Result<(), SomeError> {
+fn check_for_command(name: &str) -> Result<()> {
     let mut child = Command::new(name);
 
     match child.spawn() {
         Ok(mut s) => s.kill().expect("Could not kill spawned process"),
-        Err(e) => {
-            let msg = format!("Failed to find \"{}\" command: {} ({})", name, e, e.kind());
-            return Err(SomeError(msg));
-        }
+        Err(e) => bail!("Failed to find \"{}\" command: {} ({})", name, e, e.kind()),
     };
 
     Ok(())
@@ -116,7 +114,7 @@ fn check_for_command(name: &str) -> Result<(), SomeError> {
 /// Checks if a binary path is valid, alternatively falls back to
 /// checking if the specified string exists as a binary in $PATH/%PATH%
 /// (This is probably bad for many cases, but here it makes sense I swear)
-pub fn check_binary_path(path: &mut PathBuf) -> Result<(), SomeError> {
+pub fn check_binary_path(path: &mut PathBuf) -> Result<()> {
     if fs::metadata(&path).is_ok() {
         return Ok(());
     }

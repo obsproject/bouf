@@ -1,11 +1,11 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use anyhow::{bail, Result};
 use serde::Deserialize;
 use toml;
 
 use crate::models::args::MainArgs;
-use crate::models::errors::SomeError;
 use crate::utils::misc;
 use crate::utils::sign::Signer;
 
@@ -153,7 +153,7 @@ impl Config {
         }
     }
 
-    pub fn apply_args(&mut self, args: &MainArgs) -> Result<(), SomeError> {
+    pub fn apply_args(&mut self, args: &MainArgs) -> Result<()> {
         self.set_version(
             &args.version,
             args.beta.unwrap_or_default(),
@@ -187,7 +187,7 @@ impl Config {
         self.validate(true, true)
     }
 
-    pub fn validate(&mut self, check_binaries: bool, check_paths: bool) -> Result<(), SomeError> {
+    pub fn validate(&mut self, check_binaries: bool, check_paths: bool) -> Result<()> {
         // Check file paths (for binaries, also check if they are in %PATH%)
         if check_binaries {
             misc::check_binary_path(&mut self.env.pdbcopy_path)?;
@@ -198,7 +198,7 @@ impl Config {
         // Check if private key is set correctly (if signing is enabled)
         if !self.package.updater.skip_sign {
             if let Err(e) = Signer::check_key(self.package.updater.private_key.as_ref()) {
-                return Err(SomeError(format!("Failed loading private key: {}", e)));
+                bail!("Failed loading private key: {}", e)
             }
         }
         // Check if codesigning parameters are set (if enabled)
@@ -210,11 +210,11 @@ impl Config {
             // Output folder cannot be checked as it may not exist yet
             match fs::canonicalize(&self.env.input_dir) {
                 Ok(res) => self.env.input_dir = res,
-                Err(e) => return Err(SomeError(format!("Input dir error: {}", e))),
+                Err(e) => bail!("Input dir error: {}", e),
             }
             match fs::canonicalize(&self.env.previous_dir) {
                 Ok(res) => self.env.previous_dir = res,
-                Err(e) => return Err(SomeError(format!("Previous dir error: {}", e))),
+                Err(e) => bail!("Previous dir error: {}", e),
             }
             // This function will just return the original path if it doesn't succeed.
             self.env.output_dir = misc::recursive_canonicalize(&self.env.output_dir);
@@ -222,11 +222,11 @@ impl Config {
         }
         // Check that config defines at least one package
         if self.generate.packages.len() < 1 {
-            return Err(SomeError("No packages defined in config!".into()));
+            bail!("No packages defined in config!");
         }
         // Check if a manifest package is defined that does not have any filters
         if !self.generate.packages.iter().any(|f| f.include_files.is_none()) {
-            return Err(SomeError("No catchall package exists in conifg!".into()));
+            bail!("No catchall package exists in conifg!");
         }
 
         Ok(())

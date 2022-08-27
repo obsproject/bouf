@@ -2,13 +2,12 @@ use std::ffi::OsStr;
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
-use std::result::Result;
 
+use anyhow::{bail, Result};
 use hashbrown::HashSet;
 use walkdir::{DirEntry, WalkDir};
 
 use crate::models::config::Config;
-use crate::models::errors;
 use crate::utils::codesign::sign;
 use crate::utils::misc;
 
@@ -30,10 +29,10 @@ impl<'a> Preparator<'a> {
     }
 
     /// Create/clear output directory
-    fn ensure_output_dir(&self) -> Result<(), Box<dyn std::error::Error>> {
+    fn ensure_output_dir(&self) -> Result<()> {
         if self.install_path.exists() && !self.install_path.read_dir()?.next().is_none() {
             if !self.config.prepare.empty_output_dir {
-                return Err(Box::new(errors::SomeError("Folder not empty".into())));
+                bail!("Folder not empty");
             }
             println!("[!] Deleting previous output dir...");
             std::fs::remove_dir_all(&self.install_path)?;
@@ -44,7 +43,7 @@ impl<'a> Preparator<'a> {
     }
 
     /// Copy input files to "install" dir
-    fn copy(&self) -> Result<(), Box<dyn std::error::Error>> {
+    fn copy(&self) -> Result<()> {
         let mut overrides: HashSet<&String> = HashSet::new();
         // Convert to hash set for fast lookup
         self.config.prepare.copy.overrides.iter().for_each(|(obs_path, _)| {
@@ -108,7 +107,7 @@ impl<'a> Preparator<'a> {
     }
 
     /// Move PDBs (except excluded) to separate dir, then strip remaining ones
-    fn strip_pdbs(&self) -> Result<(), Box<dyn std::error::Error>> {
+    fn strip_pdbs(&self) -> Result<()> {
         let opts = &self.config.prepare.strip_pdbs;
         let copy_opts = &self.config.prepare.copy;
 
@@ -154,7 +153,7 @@ impl<'a> Preparator<'a> {
 
     /// Sign all eligible files in a folder using Signtool
     #[cfg(target_os = "windows")]
-    fn codesign(&self) -> Result<(), Box<dyn std::error::Error>> {
+    fn codesign(&self) -> Result<()> {
         if self.config.prepare.codesign.skip_sign {
             return Ok(());
         }
@@ -189,12 +188,12 @@ impl<'a> Preparator<'a> {
     }
 
     #[cfg(target_os = "linux")]
-    fn codesign(&self) -> Result<(), Box<dyn std::error::Error>> {
+    fn codesign(&self) -> Result<()> {
         println!("Codesigning is not (yet) supported on this platform.");
         Ok(())
     }
 
-    pub fn run(self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn run(self) -> Result<()> {
         self.ensure_output_dir()?;
         self.copy()?;
         self.codesign()?;

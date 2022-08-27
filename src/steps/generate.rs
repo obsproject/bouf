@@ -3,12 +3,12 @@ use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 
+use anyhow::Result;
 use hashbrown::{HashMap, HashSet};
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressFinish, ProgressIterator, ProgressStyle};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 use crate::models::config::Config;
-use crate::models::errors::SomeError;
 use crate::models::manifest::{FileEntry, Manifest, Package};
 use crate::utils;
 use crate::utils::hash::FileInfo;
@@ -263,7 +263,7 @@ impl<'a> Generator<'a> {
 
     /// Create patches for old -> new folder
     /// (Note: can be called standalone to just create deltas)
-    pub fn create_patches(&mut self) -> Result<(), SomeError> {
+    pub fn create_patches(&mut self) -> Result<()> {
         if self.analysis.is_none() {
             self.analyse(false)
         }
@@ -346,7 +346,7 @@ impl<'a> Generator<'a> {
         Ok(())
     }
 
-    pub fn run(mut self, skip_patches: bool) -> Result<Manifest, SomeError> {
+    pub fn run(mut self, skip_patches: bool) -> Result<Manifest> {
         // ToDo add errors to individual steps
         self.analyse(skip_patches);
         self.fill_package_map();

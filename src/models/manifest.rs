@@ -3,6 +3,8 @@ use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 
+use anyhow::Result;
+
 use crate::models::config::ObsVersion;
 
 #[derive(Serialize, Deserialize, Default)]
@@ -49,7 +51,7 @@ impl Manifest {
         self
     }
 
-    pub fn to_json(&self, pretty: bool) -> Result<String, Box<dyn std::error::Error>> {
+    pub fn to_json(&self, pretty: bool) -> Result<String> {
         let res: String;
         if pretty {
             res = serde_json::to_string_pretty(&self)?;
@@ -60,7 +62,7 @@ impl Manifest {
         Ok(res)
     }
 
-    pub fn to_file(&self, filename: &PathBuf, pretty: bool) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn to_file(&self, filename: &PathBuf, pretty: bool) -> Result<()> {
         let mut f = File::create(filename)?;
         let data = self.to_json(pretty)?;
         f.write_all(&data.as_bytes())?;
