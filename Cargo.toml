@@ -15,6 +15,11 @@ path = "src/main.rs"
 name = "bouf-sign"
 path = "src/sign.rs"
 
+# Standalone utility just for creating delta patches
+[[bin]]
+name = "bouf-deltas"
+path = "src/deltas.rs"
+
 [dependencies]
 # general
 anyhow = "1.0.62"

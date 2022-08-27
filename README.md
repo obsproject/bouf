@@ -4,8 +4,6 @@
 
 The main binary `bouf` automates the entire process based on the rules laid out in the config file and command line.
 
-Additionally, the `bouf-sign` utility is provided to sign files verified by the OBS updater (manifest, updater.exe, whatsnew, branches, etc.)
-
 The generated output has the following structure:
 
 * `install/` - OBS install files used to build installer/zip files (signed)
@@ -18,6 +16,10 @@ The generated output has the following structure:
 * `OBS-Studio-<version>-Installer.exe` - NSIS installer (signed)
 * `OBS-Studio-<version>.zip` - ZIP file of `install/`
 * `OBS-Studio-<version>-pdbs.zip` - Archive of unstripped PDBs
+
+Additionally, the following utilities are provided:
+* `bouf-sign` to sign files verified by the OBS updater (manifest, updater.exe, whatsnew, branches, etc.)
+* `bouf-deltas` to create delta patches and nothing else
 
 ## Usage:
 
@@ -60,3 +62,7 @@ The source code found in `src/` is licensed under Apache-2 (see `LICENSE.txt`).
 
 Files in `extra/nsis` may have other licenses and exist primarily for CI usage and testing,
 and may not be redistributed under the Apache-2 terms.
+
+# ToDo
+
+- Go through older code and replace `.expect()`s and `panic!`s with anyhow errors
