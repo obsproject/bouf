@@ -6,25 +6,6 @@ on:
       - 'extra/**'
 
 jobs:
-  build_debug:
-    name: Build (Debug)
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Update rust toolchain
-        run: rustup toolchain install stable --profile minimal
-
-      - name: Restore Rust Cache
-        uses: Swatinem/rust-cache@v2
-
-      - name: Build (Debug)
-        run: cargo build
-
   build_release:
     name: Build (Release)
     strategy:
@@ -50,7 +31,7 @@ jobs:
           name: bouf-build-${{ matrix.os }}
           path: target/release/bouf*
 
-  build:
+  tests:
     name: Run tests
     strategy:
       matrix:
@@ -67,4 +48,4 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Run Tests
-        run: cargo test
+        run: cargo test --bin bouf
