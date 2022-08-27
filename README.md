@@ -10,11 +10,11 @@ The generated output has the following structure:
 
 * `install/` - OBS install files used to build installer/zip files (signed)
 * `updater/`
-  + `patches_studio/<branch>/{core,obs-browser}` - delta patches for upload to server 
-  + `update_studio/<branch>/{core,obs-browser}` - files split into packages for upload to server
+  + `patches_studio/[branch]/{core,obs-browser}` - delta patches for upload to server 
+  + `update_studio/[branch]/{core,obs-browser}` - files split into packages for upload to server
 * `pdbs/` - Full PDBs
-* `manifest_<branch>.json` and `manifest_<branch>.json.sig` for updater
-* `added.txt`, `changed.txt`, and `removed.txt` for manual checks 
+* `manifest[_<branch>].json` and `manifest[_<branch>].json.sig` for updater
+* `added.txt`, `changed.txt`, `unchanged.txt`, and `removed.txt` for manual checks 
 * `OBS-Studio-<version>-Installer.exe` - NSIS installer (signed)
 * `OBS-Studio-<version>.zip` - ZIP file of `install/`
 * `OBS-Studio-<version>-pdbs.zip` - Archive of unstripped PDBs
@@ -22,10 +22,10 @@ The generated output has the following structure:
 ## Usage:
 
 ```
-bouf 0.X.X
+bouf 0.3.0
 
 USAGE:
-    bouf [OPTIONS] --config <Config file> --version <Major.Minor.Patch[-(rc|beta)Num]>
+    bouf.exe [OPTIONS] --config <Config file> --version <Major.Minor.Patch[-(rc|beta)Num]>
 
 OPTIONS:
         --beta <Beta number>                            Beta number
@@ -60,9 +60,3 @@ The source code found in `src/` is licensed under Apache-2 (see `LICENSE.txt`).
 
 Files in `extra/nsis` may have other licenses and exist primarily for CI usage and testing,
 and may not be redistributed under the Apache-2 terms.
-
-## ToDo
-
-- Cleanup, bugfixes, rewrites...
-  + See "ToDo"s in source code and `rustc` warnings (it angry)
-- Also probably more tests.
