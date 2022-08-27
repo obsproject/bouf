@@ -24,7 +24,7 @@ pub struct Config {
     pub obs_version: ObsVersion,
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize, Default, Debug, PartialEq)]
 #[serde(default)]
 pub struct ObsVersion {
     pub commit: String,
@@ -144,13 +144,13 @@ pub struct PostOptions {
 
 impl Config {
     pub fn set_version(&mut self, version_string: &String, beta_num: u8, rc_num: u8) {
-        let ver_parsed = misc::parse_version(version_string);
-        self.obs_version.version_str = version_string.split("-").next().unwrap().to_string();
-        self.obs_version.version_major = ver_parsed.0;
-        self.obs_version.version_minor = ver_parsed.1;
-        self.obs_version.version_patch = ver_parsed.2;
-        self.obs_version.beta = if beta_num > 0 { beta_num } else { ver_parsed.3 };
-        self.obs_version.rc = if rc_num > 0 { rc_num } else { ver_parsed.4 };
+        self.obs_version = misc::parse_version(version_string);
+
+        if beta_num > 0 {
+            self.obs_version.beta = beta_num
+        } else if rc_num > 0 {
+            self.obs_version.rc = rc_num
+        }
     }
 
     pub fn apply_args(&mut self, args: &MainArgs) -> Result<(), SomeError> {
