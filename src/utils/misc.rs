@@ -2,12 +2,12 @@ use std::fs;
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 
 use crate::models::config::ObsVersion;
 
 /// Parses a version string such as "28.0.0-rc1" to version struct
-pub fn parse_version(version_string: &String) -> ObsVersion {
+pub fn parse_version(version_string: &String) -> Result<ObsVersion> {
     let parts: Vec<&str> = version_string.split("-").collect();
     let numbers: Vec<&str> = parts[0].split(".").collect();
 
@@ -26,11 +26,11 @@ pub fn parse_version(version_string: &String) -> ObsVersion {
         } else if suffix.starts_with("rc") {
             version.rc = suffix[2..].parse().unwrap();
         } else {
-            panic!("Invalid version string!")
+            bail!("Invalid version string! {}", version_string)
         }
     }
 
-    version
+    Ok(version)
 }
 
 /// Get the version string used in filenames, optionally as a short version
@@ -104,7 +104,7 @@ fn check_for_command(name: &str) -> Result<()> {
     let mut child = Command::new(name);
 
     match child.spawn() {
-        Ok(mut s) => s.kill().expect("Could not kill spawned process"),
+        Ok(mut s) => s.kill().context("Could not kill spawned process")?,
         Err(e) => bail!("Failed to find \"{}\" command: {} ({})", name, e, e.kind()),
     };
 
@@ -139,7 +139,7 @@ mod misc_tests {
             version_major: 28,
             ..Default::default()
         };
-        let ver = parse_version(&str_ver);
+        let ver = parse_version(&str_ver)?;
         assert_eq!(ver, ref_ver);
         // Beta version
         let str_ver = "28.1.0-beta2".to_string();
@@ -150,7 +150,7 @@ mod misc_tests {
             beta: 2,
             ..Default::default()
         };
-        let ver = parse_version(&str_ver);
+        let ver = parse_version(&str_ver)?;
         assert_eq!(ver, ref_ver);
     }
 

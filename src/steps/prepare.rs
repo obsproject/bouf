@@ -93,7 +93,7 @@ impl<'a> Preparator<'a> {
         // Copy override files over
         for (ins_path, ovr_path) in &self.config.prepare.copy.overrides {
             if !fs::metadata(ovr_path).is_ok() {
-                panic!("Override file \"{}\" does not exist!", ovr_path)
+                bail!("Override file \"{}\" does not exist!", ovr_path)
             }
 
             let full_path = self.install_path.join(ins_path);

@@ -14,7 +14,7 @@ use utils::sign::Signer;
 
 fn main() -> Result<()> {
     let args: MainArgs = MainArgs::parse();
-    let mut conf = Config::from_file(args.config.as_path());
+    let mut conf = Config::from_file(args.config.as_path())?;
 
     println!("[+] Verifying config validity...");
     conf.apply_args(&args).context("[!] Config invalid")?;

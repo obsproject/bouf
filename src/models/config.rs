@@ -143,14 +143,16 @@ pub struct PostOptions {
 }
 
 impl Config {
-    pub fn set_version(&mut self, version_string: &String, beta_num: u8, rc_num: u8) {
-        self.obs_version = misc::parse_version(version_string);
+    pub fn set_version(&mut self, version_string: &String, beta_num: u8, rc_num: u8) -> Result<()> {
+        self.obs_version = misc::parse_version(version_string)?;
 
         if beta_num > 0 {
             self.obs_version.beta = beta_num
         } else if rc_num > 0 {
             self.obs_version.rc = rc_num
         }
+
+        Ok(())
     }
 
     pub fn apply_args(&mut self, args: &MainArgs) -> Result<()> {
@@ -158,7 +160,7 @@ impl Config {
             &args.version,
             args.beta.unwrap_or_default(),
             args.rc.unwrap_or_default(),
-        );
+        )?;
         if let Some(input) = &args.input {
             self.env.input_dir = input.clone();
         }
@@ -232,15 +234,10 @@ impl Config {
         Ok(())
     }
 
-    pub fn from_file(path: &Path) -> Config {
-        let config: Option<Config> = fs::read_to_string(path)
-            .ok()
-            .and_then(|fc| toml::from_str(fc.as_str()).ok());
+    pub fn from_file(path: &Path) -> Result<Config> {
+        let config_str = fs::read_to_string(path)?;
+        let config = toml::from_str::<Config>(config_str.as_str())?;
 
-        if config.is_none() {
-            panic!("Failed to parse config!")
-        }
-
-        config.unwrap()
+        Ok(config)
     }
 }
