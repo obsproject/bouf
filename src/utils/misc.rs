@@ -139,7 +139,7 @@ mod misc_tests {
             version_major: 28,
             ..Default::default()
         };
-        let ver = parse_version(&str_ver)?;
+        let ver = parse_version(&str_ver).expect("Parsing version failed");
         assert_eq!(ver, ref_ver);
         // Beta version
         let str_ver = "28.1.0-beta2".to_string();
@@ -150,7 +150,7 @@ mod misc_tests {
             beta: 2,
             ..Default::default()
         };
-        let ver = parse_version(&str_ver)?;
+        let ver = parse_version(&str_ver).expect("Parsing version failed");
         assert_eq!(ver, ref_ver);
     }
 
