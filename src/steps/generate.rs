@@ -265,7 +265,8 @@ impl<'a> Generator<'a> {
     /// (Note: can be called standalone to just create deltas)
     pub fn create_patches(&mut self) -> Result<()> {
         if self.analysis.is_none() {
-            self.analyse(false)
+            self.analyse(false);
+            self.fill_package_map();
         }
         std::fs::create_dir_all(&self.out_path).expect("Failed to create output directory");
         let analysis = self.analysis.as_ref().unwrap();
