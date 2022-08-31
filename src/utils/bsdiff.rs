@@ -1,7 +1,5 @@
 use std::fs::File;
-use std::io::Result;
-use std::io::{BufReader, Cursor, Seek, SeekFrom};
-use std::io::{Read, Write};
+use std::io::{BufReader, Cursor, Read, Result, Seek, SeekFrom, Write};
 use std::path::Path;
 
 use bsdiff::diff::diff;
@@ -43,6 +41,7 @@ pub fn create_patch(old: &Path, new: &Path, patch: &Path) -> Result<FileInfo> {
 /// Apply OBS-bsdiff patch
 // This function is not implemented in the most memory-efficient way,
 // it's only needed for testing though.
+#[allow(dead_code)]
 pub fn apply_patch(old: &Path, new: &Path, patch: &Path) -> Result<FileInfo> {
     let mut old_file = File::open(old).expect("Unable to open old file");
     let mut new_file = File::create(new).expect("Unable to open new file");

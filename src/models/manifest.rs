@@ -1,9 +1,9 @@
-use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 
 use anyhow::Result;
+use serde::{Deserialize, Serialize};
 
 use crate::models::config::ObsVersion;
 

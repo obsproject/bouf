@@ -2,11 +2,11 @@
 
 use std::path::PathBuf;
 
-use crate::utils::sign::Signer;
-use clap::Parser;
-
 mod models;
 mod utils;
+
+use crate::utils::sign::Signer;
+use clap::Parser;
 
 #[derive(Parser, Debug)]
 #[clap(about, long_about = None)]

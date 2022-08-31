@@ -1,5 +1,4 @@
 use std::fs;
-use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -368,7 +367,7 @@ impl<'a> Generator<'a> {
 
 /// Write text file, logging but ultimately ignoring errors
 fn write_file_unchecked(filename: PathBuf, contents: String) {
-    if let Ok(mut f) = File::create(&filename) {
+    if let Ok(mut f) = fs::File::create(&filename) {
         if let Err(e) = f.write_all(contents.as_bytes()) {
             println!("Writing {} failed: {}", filename.display(), e);
         }

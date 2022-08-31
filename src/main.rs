@@ -1,9 +1,9 @@
+use anyhow::{Context, Result};
+use clap::Parser;
+
 mod models;
 mod steps;
 mod utils;
-
-use anyhow::{Context, Result};
-use clap::Parser;
 
 use models::args::MainArgs;
 use models::config::Config;
