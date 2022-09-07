@@ -30,10 +30,10 @@ jobs:
           mkdir test\old
           Invoke-WebRequest -Uri "https://github.com/obsproject/obs-studio/releases/download/27.1.3/OBS-Studio-27.1.3-Full-x64.zip" -OutFile "oldest.zip"
           Invoke-WebRequest -Uri "https://github.com/obsproject/obs-studio/releases/download/27.2.4/OBS-Studio-27.2.4-Full-x64.zip" -OutFile "older.zip"
-          Invoke-WebRequest -Uri "https://github.com/obsproject/obs-studio/releases/download/28.0.0-beta1/OBS-Studio-28.0-beta1-Full-x64.zip" -OutFile "old.zip"
-          Invoke-WebRequest -Uri "https://github.com/obsproject/obs-studio/releases/download/28.0.0-beta2/OBS-Studio-28.0-beta2-Full-x64.zip" -OutFile "new.zip"
+          Invoke-WebRequest -Uri "https://github.com/obsproject/obs-studio/releases/download/28.0.0/OBS-Studio-28.0-Full-x64.zip" -OutFile "old.zip"
+          Invoke-WebRequest -Uri "https://github.com/obsproject/obs-studio/releases/download/28.0.1/OBS-Studio-28.0.1-Full-x64.zip" -OutFile "new.zip"
           7z x new.zip -o"test/new"
-          7z x old.zip -o"test/old/28.0.0-beta1"
+          7z x old.zip -o"test/old/28.0.0"
           7z x older.zip -o"test/old/27.2.4"
           7z x oldest.zip -o"test/old/27.1.3"
 
@@ -47,9 +47,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: obs_distribution
-          path: |
-            test/out/*.exe
-            test/out/*.zip
-            test/out/*.json
-            test/out/*.sig
-            test/out/*.txt
+          path: test/out
