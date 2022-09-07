@@ -83,7 +83,7 @@ pub fn get_dir_hashes(path: &PathBuf, cache: Option<HashMap<String, FileInfo>>) 
         // Get a path relative to the input directory
         let relative_path = file.path().strip_prefix(path).unwrap().to_str().unwrap();
         // Internally we always use Unix-style paths, so adjust this here
-        let relative_path_str = String::from(relative_path).replace("\\", "/");
+        let relative_path_str = String::from(relative_path).replace('\\', "/");
 
         if let Some(_cache_entry) = cache.as_ref().and_then(|_cache| _cache.get(&relative_path_str)) {
             hashes.insert(relative_path_str, _cache_entry.to_owned());
@@ -137,7 +137,7 @@ pub fn get_dir_hashes_cache(path: &PathBuf) -> HashMap<String, FileInfo> {
     let file_written = serde_json::to_string_pretty(&hashes).ok().and_then(|j| {
         File::create(cache_file.as_path())
             .ok()
-            .and_then(|mut f: File| f.write_all(&j.as_bytes()).ok())
+            .and_then(|mut f: File| f.write_all(j.as_bytes()).ok())
     });
 
     if file_written.is_none() {

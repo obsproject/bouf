@@ -174,7 +174,7 @@ impl Config {
             self.env.branch = branch.to_owned();
         }
         if let Some(commit) = &args.commit {
-            self.obs_version.commit = commit.replace("g", "");
+            self.obs_version.commit = commit.replace('g', "");
         }
 
         self.prepare.empty_output_dir = args.clear_output;
@@ -223,7 +223,7 @@ impl Config {
             // ToDo Check other files (nsis script, updater, vcredist)
         }
         // Check that config defines at least one package
-        if self.generate.packages.len() < 1 {
+        if self.generate.packages.is_empty() {
             bail!("No packages defined in config!");
         }
         // Check if a manifest package is defined that does not have any filters

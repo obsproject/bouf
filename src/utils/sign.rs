@@ -15,7 +15,7 @@ pub struct Signer<'a> {
 impl<'a> Signer<'a> {
     pub fn init(key_file: Option<&'a PathBuf>) -> Self {
         Self {
-            key_file: key_file,
+            key_file,
             ..Default::default()
         }
     }
@@ -59,7 +59,7 @@ impl<'a> Signer<'a> {
 
     pub fn check_key(key_file: Option<&'a PathBuf>) -> Result<()> {
         let mut signer = Self {
-            key_file: key_file,
+            key_file,
             ..Default::default()
         };
 

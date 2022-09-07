@@ -34,7 +34,7 @@ impl<'a> Packaging<'a> {
         let build_dir = self.config.env.output_dir.join("install").canonicalize()?;
         let mut build_dir_str = build_dir.into_os_string().into_string().unwrap();
         // Sanitise build dir string for NSIS
-        if build_dir_str.starts_with("\\") {
+        if build_dir_str.starts_with('\\') {
             build_dir_str = build_dir_str.strip_prefix("\\\\?\\").unwrap().to_string();
         }
 
@@ -43,7 +43,7 @@ impl<'a> Packaging<'a> {
             format!("/DAPPVERSION={}", self.config.obs_version.version_str).into(),
             format!("/DSHORTVERSION={}", self.short_version).into(),
             format!("/DBUILDDIR={}", build_dir_str).into(),
-            nsis_script.to_owned().into_os_string(),
+            nsis_script.into_os_string(),
         ];
 
         println!(" => Running NSIS...");
@@ -119,12 +119,11 @@ impl<'a> Packaging<'a> {
     }
 
     pub fn finalise_manifest(&self, manifest: &mut Manifest) -> Result<PathBuf> {
-        let manifest_filename: String;
-        if self.config.env.branch.is_empty() {
-            manifest_filename = "manifest.json".to_string();
+        let manifest_filename = if self.config.env.branch.is_empty() {
+            "manifest.json".to_string()
         } else {
-            manifest_filename = format!("manifest_{}.json", self.config.env.branch);
-        }
+            format!("manifest_{}.json", self.config.env.branch)
+        };
 
         let manifest_path = self.config.env.output_dir.join(manifest_filename);
 

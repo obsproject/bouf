@@ -8,8 +8,8 @@ use crate::models::config::ObsVersion;
 
 /// Parses a version string such as "28.0.0-rc1" to version struct
 pub fn parse_version(version_string: &String) -> Result<ObsVersion> {
-    let parts: Vec<&str> = version_string.split("-").collect();
-    let numbers: Vec<&str> = parts[0].split(".").collect();
+    let parts: Vec<&str> = version_string.split('-').collect();
+    let numbers: Vec<&str> = parts[0].split('.').collect();
 
     let mut version = ObsVersion { ..Default::default() };
 
@@ -21,10 +21,10 @@ pub fn parse_version(version_string: &String) -> Result<ObsVersion> {
     if parts.len() > 1 {
         let suffix = parts[1];
         // Parse -beta<Num> and -rc<Num> suffixes
-        if suffix.starts_with("beta") {
-            version.beta = suffix[4..].parse().unwrap();
-        } else if suffix.starts_with("rc") {
-            version.rc = suffix[2..].parse().unwrap();
+        if let Some(beta_num) = suffix.strip_prefix("beta") {
+            version.beta = beta_num.parse().unwrap();
+        } else if let Some(rc_num) = suffix.strip_prefix("rc") {
+            version.rc = rc_num.parse().unwrap();
         } else {
             bail!("Invalid version string! {}", version_string)
         }
@@ -84,7 +84,7 @@ pub fn normalize_path(path: &Path) -> PathBuf {
 /// This works by searching for the longest chain of components of the specified path that does
 /// exist, then appending the remaining ones.
 /// For instance, the output folder may not exist, but we may still want an absolute path to it.
-pub fn recursive_canonicalize(path: &PathBuf) -> PathBuf {
+pub fn recursive_canonicalize(path: &Path) -> PathBuf {
     let mut out_path = PathBuf::new();
 
     for component in path.components() {

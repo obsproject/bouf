@@ -80,7 +80,7 @@ fn locate_signtool() -> Result<PathBuf> {
         .filter_map(|res| match res {
             Ok(v) => Some(v),
             Err(err) => {
-                println!("[!] Error enumerating installed root keys: {}", err.to_string());
+                println!("[!] Error enumerating installed root keys: {}", err);
                 None
             }
         })
@@ -91,13 +91,13 @@ fn locate_signtool() -> Result<PathBuf> {
     let kit_bin_paths: Vec<PathBuf> = installed_kits
         .iter()
         .rev()
-        .map(|kit| kits_root_10_bin_path.join(kit).to_path_buf())
+        .map(|kit| kits_root_10_bin_path.join(kit))
         .collect();
 
     for kit_bin_path in &kit_bin_paths {
         let signtool_path = kit_bin_path.join("x64").join("signtool.exe");
         if signtool_path.exists() {
-            return Ok(signtool_path.to_path_buf());
+            return Ok(signtool_path);
         }
     }
 

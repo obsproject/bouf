@@ -130,10 +130,10 @@ impl<'a> Generator<'a> {
 
         for (path, fileinfo) in old_hashes {
             // Strip version (first folder name) from path
-            let mut rel_path = path[path.find("/").unwrap_or(0) + 1..].to_owned();
+            let mut rel_path = path[path.find('/').unwrap_or(0) + 1..].to_owned();
             // For backwards-compatibility: Remove "core/" and "obs-browser/" package prefixes in filenames
             if rel_path.starts_with("core") || rel_path.starts_with("obs-browser") {
-                rel_path = rel_path[rel_path.find("/").unwrap_or(0) + 1..].parse().unwrap();
+                rel_path = rel_path[rel_path.find('/').unwrap_or(0) + 1..].parse().unwrap();
             }
 
             // Skip (hash, filename) pairs we already added to the patch list
@@ -215,20 +215,14 @@ impl<'a> Generator<'a> {
                 .collect();
 
             // Sort file lists alphabetically for a nicer manifest
-            manifest_package
-                .removed_files
-                .sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
-            manifest_package
-                .files
-                .sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+            manifest_package.removed_files.sort_by_key(|a| a.to_lowercase());
+            manifest_package.files.sort_by_key(|a| a.name.to_lowercase());
 
             manifest.packages.push(manifest_package);
         }
 
         // Sort packages by name as well
-        manifest
-            .packages
-            .sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+        manifest.packages.sort_by_key(|a| a.name.to_lowercase());
 
         manifest
     }
@@ -251,7 +245,7 @@ impl<'a> Generator<'a> {
             .par_iter()
             .progress_with(progress_bar)
             .for_each(|(filename, _)| {
-                let package: &String = analysis.package_map.get(filename).unwrap_or(&&analysis.default_pkg);
+                let package: &String = analysis.package_map.get(filename).unwrap_or(&analysis.default_pkg);
                 let patch_filename = format!("updater/update_studio/{branch}/{package}/{filename}");
                 let updater_file = self.out_path.join(patch_filename);
                 let build_file = self.inp_path.join(&filename);
@@ -310,7 +304,7 @@ impl<'a> Generator<'a> {
             .par_iter()
             .progress_with(progress_bar_mt)
             .for_each(|patch| {
-                let package: &String = analysis.package_map.get(&patch.name).unwrap_or(&&analysis.default_pkg);
+                let package: &String = analysis.package_map.get(&patch.name).unwrap_or(&analysis.default_pkg);
                 let patch_filename = format!(
                     "updater/patches_studio/{}/{}/{}/{}",
                     branch, package, patch.name, patch.hash
@@ -323,7 +317,7 @@ impl<'a> Generator<'a> {
             });
 
         // If any patches were assigned to the non-parallel patch list run them here
-        if patch_list_st.len() > 0 {
+        if !patch_list_st.is_empty() {
             let num = patch_list_st.len() as u64;
             let progress_bar_st = ProgressBar::new(num)
                 .with_style(style)
@@ -331,7 +325,7 @@ impl<'a> Generator<'a> {
 
             println!("[+] Creating non-parallel delta-patches...");
             patch_list_st.iter().progress_with(progress_bar_st).for_each(|patch| {
-                let package: &String = analysis.package_map.get(&patch.name).unwrap_or(&&analysis.default_pkg);
+                let package: &String = analysis.package_map.get(&patch.name).unwrap_or(&analysis.default_pkg);
                 let patch_filename = format!(
                     "updater/patches_studio/{}/{}/{}/{}",
                     branch, package, patch.name, patch.hash
@@ -377,7 +371,7 @@ fn write_file_unchecked(filename: PathBuf, contents: String) {
 /// Turn string hashset into sorted vector
 fn get_sorted_list(inp: &HashSet<String>) -> Vec<String> {
     let mut list = inp.into_iter().cloned().collect::<Vec<_>>();
-    list.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
+    list.sort_by_key(|a| a.to_lowercase());
 
     list
 }

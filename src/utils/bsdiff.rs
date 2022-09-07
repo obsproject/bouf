@@ -31,9 +31,9 @@ pub fn create_patch(old: &Path, new: &Path, patch: &Path) -> Result<FileInfo> {
     diff(&old_buf, &new_buf, &mut writer)?;
     writer.finish()?;
 
-    patch_file.write(b"JIMSLEY/BSDIFF43")?;
-    patch_file.write(&((new_buf.len() as u64).to_le_bytes()))?;
-    patch_file.write_all(&out_data.get_ref())?;
+    patch_file.write_all(b"JIMSLEY/BSDIFF43")?;
+    patch_file.write_all(&((new_buf.len() as u64).to_le_bytes()))?;
+    patch_file.write_all(out_data.get_ref())?;
 
     Ok(hash_file(patch))
 }

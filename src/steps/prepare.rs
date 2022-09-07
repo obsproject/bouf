@@ -30,7 +30,7 @@ impl<'a> Preparator<'a> {
 
     /// Create/clear output directory
     fn ensure_output_dir(&self) -> Result<()> {
-        if self.install_path.exists() && !self.install_path.read_dir()?.next().is_none() {
+        if self.install_path.exists() && self.install_path.read_dir()?.next().is_some() {
             if !self.config.prepare.empty_output_dir {
                 bail!("Folder not empty");
             }
@@ -66,7 +66,7 @@ impl<'a> Preparator<'a> {
             let file: DirEntry = file;
             // Get a path relative to the input directory for lookup/copy path
             let relative_path = file.path().strip_prefix(&self.input_path).unwrap().to_str().unwrap();
-            let relative_path_str = String::from(relative_path).replace("\\", "/");
+            let relative_path_str = String::from(relative_path).replace('\\', "/");
             // Check against overrides
             if overrides.contains(&relative_path_str) {
                 continue;
@@ -92,7 +92,7 @@ impl<'a> Preparator<'a> {
 
         // Copy override files over
         for (ins_path, ovr_path) in &self.config.prepare.copy.overrides {
-            if !fs::metadata(ovr_path).is_ok() {
+            if fs::metadata(ovr_path).is_err() {
                 bail!("Override file \"{}\" does not exist!", ovr_path)
             }
 
@@ -127,7 +127,7 @@ impl<'a> Preparator<'a> {
             if !relative_path.ends_with(".pdb") {
                 continue;
             }
-            let relative_path_str = String::from(relative_path).replace("\\", "/");
+            let relative_path_str = String::from(relative_path).replace('\\', "/");
             let new_path = self.pdbs_path.join(relative_path);
             if let Some(_parent) = new_path.parent() {
                 fs::create_dir_all(_parent)?;
@@ -176,7 +176,7 @@ impl<'a> Preparator<'a> {
                 continue;
             }
             // Do not re-sign files that were copied
-            let relative_path_str = String::from(relative_path).replace("\\", "/");
+            let relative_path_str = String::from(relative_path).replace('\\', "/");
             if overrides.iter().any(|(p, _)| relative_path_str == *p) {
                 continue;
             }

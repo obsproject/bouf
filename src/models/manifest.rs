@@ -52,12 +52,11 @@ impl Manifest {
     }
 
     pub fn to_json(&self, pretty: bool) -> Result<String> {
-        let res: String;
-        if pretty {
-            res = serde_json::to_string_pretty(&self)?;
+        let res: String = if pretty {
+            serde_json::to_string_pretty(&self)?
         } else {
-            res = serde_json::to_string(&self)?;
-        }
+            serde_json::to_string(&self)?
+        };
 
         Ok(res)
     }
@@ -65,7 +64,7 @@ impl Manifest {
     pub fn to_file(&self, filename: &PathBuf, pretty: bool) -> Result<()> {
         let mut f = File::create(filename)?;
         let data = self.to_json(pretty)?;
-        f.write_all(&data.as_bytes())?;
+        f.write_all(data.as_bytes())?;
 
         Ok(())
     }
