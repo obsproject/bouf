@@ -13,9 +13,11 @@ use crate::models::manifest::Manifest;
 use crate::utils::hash::hash_file;
 use crate::utils::misc;
 
+#[allow(dead_code)]
 pub struct Packaging<'a> {
     config: &'a Config,
     short_version: String,
+    #[allow(unused_variables)]
     tag_version: String,
 }
 
@@ -84,13 +86,6 @@ impl<'a> Packaging<'a> {
         println!("[+] Signing installer file \"{}\"", path.display());
         let files: Vec<PathBuf> = vec![path];
         sign(files, &self.config.prepare.codesign)?;
-
-        Ok(())
-    }
-
-    #[cfg(unix)]
-    fn sign_installer(&self) -> Result<()> {
-        println!("Singing an installer is not (yet) supported on this platform.");
 
         Ok(())
     }
