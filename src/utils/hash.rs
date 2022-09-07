@@ -4,7 +4,7 @@ use std::io::{BufReader, Read, Write as IoWrite};
 use std::path::{Path, PathBuf};
 
 #[cfg(unix)]
-use std::os::linux::fs::MetadataExt;
+use std::os::unix::fs::MetadataExt;
 #[cfg(windows)]
 use std::os::windows::fs::MetadataExt;
 
@@ -38,7 +38,7 @@ fn create_file_info(hash_str: String, file: &File) -> FileInfo {
     let file_meta = file.metadata().expect("Unable to get file metadata");
     FileInfo {
         hash: hash_str,
-        size: file_meta.st_size(),
+        size: file_meta.size(),
     }
 }
 
