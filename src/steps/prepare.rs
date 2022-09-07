@@ -7,8 +7,10 @@ use anyhow::{bail, Result};
 use hashbrown::HashSet;
 use walkdir::{DirEntry, WalkDir};
 
-use crate::models::config::Config;
+#[cfg(windows)]
 use crate::utils::codesign::sign;
+
+use crate::models::config::Config;
 use crate::utils::misc;
 
 pub struct Preparator<'a> {

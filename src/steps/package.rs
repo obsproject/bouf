@@ -5,9 +5,11 @@ use std::process::Command;
 
 use anyhow::{anyhow, Result};
 
+#[cfg(windows)]
+use crate::utils::codesign::sign;
+
 use crate::models::config::{Config, EnvOptions};
 use crate::models::manifest::Manifest;
-use crate::utils::codesign::sign;
 use crate::utils::hash::hash_file;
 use crate::utils::misc;
 
