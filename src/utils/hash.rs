@@ -3,9 +3,9 @@ use std::fs::File;
 use std::io::{BufReader, Read, Write as IoWrite};
 use std::path::{Path, PathBuf};
 
-#[cfg(target_os = "linux")]
+#[cfg(unix)]
 use std::os::linux::fs::MetadataExt;
-#[cfg(target_os = "windows")]
+#[cfg(windows)]
 use std::os::windows::fs::MetadataExt;
 
 use blake2::digest::{Update, VariableOutput};
@@ -25,7 +25,7 @@ pub struct FileInfo {
     pub size: u64,
 }
 
-#[cfg(target_os = "windows")]
+#[cfg(windows)]
 fn create_file_info(hash_str: String, file: &File) -> FileInfo {
     let file_meta = file.metadata().expect("Unable to get file metadata");
     FileInfo {
@@ -33,7 +33,7 @@ fn create_file_info(hash_str: String, file: &File) -> FileInfo {
         size: file_meta.file_size(),
     }
 }
-#[cfg(target_os = "linux")]
+#[cfg(unix)]
 fn create_file_info(hash_str: String, file: &File) -> FileInfo {
     let file_meta = file.metadata().expect("Unable to get file metadata");
     FileInfo {

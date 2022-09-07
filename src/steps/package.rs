@@ -26,7 +26,7 @@ impl<'a> Packaging<'a> {
         }
     }
 
-    #[cfg(target_os = "windows")]
+    #[cfg(windows)]
     pub fn run_nsis(&self) -> Result<()> {
         // ToDo make installer name more configurable
         let nsis_script = self.config.package.installer.nsis_script.canonicalize()?;
@@ -67,14 +67,14 @@ impl<'a> Packaging<'a> {
         }
     }
 
-    #[cfg(target_os = "linux")]
+    #[cfg(unix)]
     pub fn run_nsis(&self) -> Result<()> {
         println!("Creating an installer is not (yet) supported on this platform.");
 
         Ok(())
     }
 
-    #[cfg(target_os = "windows")]
+    #[cfg(windows)]
     fn sign_installer(&self) -> Result<()> {
         let filename = format!("OBS-Studio-{}-Full-Installer-x64.exe", self.short_version);
         let path = self.config.env.output_dir.join(filename).canonicalize()?;
@@ -86,7 +86,7 @@ impl<'a> Packaging<'a> {
         Ok(())
     }
 
-    #[cfg(target_os = "linux")]
+    #[cfg(unix)]
     fn sign_installer(&self) -> Result<()> {
         println!("Singing an installer is not (yet) supported on this platform.");
 

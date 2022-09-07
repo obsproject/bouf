@@ -152,7 +152,7 @@ impl<'a> Preparator<'a> {
     }
 
     /// Sign all eligible files in a folder using Signtool
-    #[cfg(target_os = "windows")]
+    #[cfg(windows)]
     fn codesign(&self) -> Result<()> {
         if self.config.prepare.codesign.skip_sign {
             return Ok(());
@@ -187,7 +187,7 @@ impl<'a> Preparator<'a> {
         Ok(())
     }
 
-    #[cfg(target_os = "linux")]
+    #[cfg(unix)]
     fn codesign(&self) -> Result<()> {
         println!("Codesigning is not (yet) supported on this platform.");
         Ok(())
