@@ -19,7 +19,7 @@ use walkdir::{DirEntry, WalkDir};
 const BLAKE2_HASH_SIZE: usize = 20;
 const READ_BUFSIZE: usize = usize::pow(2, 16);
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq)]
 pub struct FileInfo {
     pub hash: String,
     pub size: u64,

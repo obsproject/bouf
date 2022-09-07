@@ -24,7 +24,7 @@ pub struct Config {
     pub obs_version: ObsVersion,
 }
 
-#[derive(Deserialize, Default, Debug, PartialEq)]
+#[derive(Deserialize, Default, Debug, PartialEq, Eq)]
 #[serde(default)]
 pub struct ObsVersion {
     pub commit: String,
