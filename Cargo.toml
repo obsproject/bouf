@@ -27,7 +27,7 @@ walkdir = "2"
 serde = { version = "1.0.142", features = ["derive"] }
 serde_json = "1.0.83"
 # cli/config
-clap = { version = "3.2.16", features = ["derive"] }
+clap = { version = "4.0.18", features = ["derive"] }
 toml = "0.5.9"
 # delta patching
 bsdiff = "0.1.6"
