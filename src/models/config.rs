@@ -1,8 +1,9 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 use anyhow::{bail, Result};
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use toml;
 
 use crate::models::args::MainArgs;
@@ -86,7 +87,8 @@ pub struct StripPDBOptions {
 #[derive(Deserialize, Default)]
 #[serde(default)]
 pub struct GenerationOptions {
-    // patch_type: String,
+    #[serde(deserialize_with = "deserialize_patch_type")]
+    pub patch_type: PatchType,
     pub skip_for_prerelease: bool,
     pub removed_files: Vec<String>,
     pub exclude_from_parallel: Vec<String>,
@@ -239,5 +241,37 @@ impl Config {
         let config = toml::from_str::<Config>(config_str.as_str())?;
 
         Ok(config)
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Default, Deserialize)]
+pub enum PatchType {
+    #[default]
+    BsdiffLzma,
+    BidiffLzma,
+}
+
+impl FromStr for PatchType {
+    type Err = ();
+
+    fn from_str(input: &str) -> Result<PatchType, Self::Err> {
+        match input {
+            "bsdiff_lzma" => Ok(PatchType::BsdiffLzma),
+            "bidiff_lzma" => Ok(PatchType::BidiffLzma),
+            // Just fall back to bsdiff for invalid values
+            _ => Ok(PatchType::BsdiffLzma),
+        }
+    }
+}
+
+fn deserialize_patch_type<'de, D>(deserializer: D) -> Result<PatchType, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let buf = String::deserialize(deserializer)?;
+
+    match PatchType::from_str(&buf) {
+        Ok(val) => Ok(val),
+        Err(_) => Err(serde::de::Error::custom("Failed reading patch_type")),
     }
 }

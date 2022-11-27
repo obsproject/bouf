@@ -1,3 +1,4 @@
+pub mod bidiff;
 pub mod bsdiff;
 pub mod hash;
 pub mod misc;
