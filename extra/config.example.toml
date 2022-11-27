@@ -48,8 +48,7 @@ exclude = [
 
 ## Delta patch generation
 [generate]
-# Maybe in the future there will be more!
-# patch_type = "bsdiff_lzma"
+patch_type = "bsdiff_lzma"
 
 # eclude files matching these patterns from being removed automatically
 # (e.g. legacy plugins no longer shipped with OBS but aren't broken yet)
