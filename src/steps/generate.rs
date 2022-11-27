@@ -248,7 +248,7 @@ impl<'a> Generator<'a> {
                 let package: &String = analysis.package_map.get(filename).unwrap_or(&analysis.default_pkg);
                 let patch_filename = format!("updater/update_studio/{branch}/{package}/{filename}");
                 let updater_file = self.out_path.join(patch_filename);
-                let build_file = self.inp_path.join(&filename);
+                let build_file = self.inp_path.join(filename);
                 fs::create_dir_all(updater_file.parent().unwrap()).expect("Failed creating folder!");
                 fs::copy(build_file, updater_file).expect("Failed copying file!");
             });
