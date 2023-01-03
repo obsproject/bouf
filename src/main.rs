@@ -25,7 +25,7 @@ fn main() -> Result<()> {
     println!(" - Previous versions dir: {}", &conf.env.previous_dir.display());
     println!(" - Output dir: {}", &conf.env.output_dir.display());
 
-    if !args.skip_preparation {
+    if !args.updater_data_only {
         let prep = Preparator::init(&conf);
         prep.run().context("[!] Preparation failed")?;
     } else {
@@ -34,21 +34,21 @@ fn main() -> Result<()> {
 
     // Create deltas and manifest
     println!("[+] Creating manifest and patches...");
-    let generator = Generator::init(&conf, !args.skip_preparation);
+    let generator = Generator::init(&conf, !args.updater_data_only);
     let mut manifest = generator
         .run(args.skip_patches)
         .context("[!] Error during generator run")?;
 
     let packager = Packaging::init(&conf);
     // Create NSIS/ZIP
-    if !args.skip_installer && !args.skip_preparation {
+    if !args.skip_installer && !args.updater_data_only {
         println!("[+] Creating Installer");
         packager.run_nsis().context("[!] NSIS creation/signing failed")?;
     } else {
         println!("[*] Skipping installer creation...")
     }
 
-    if !args.skip_preparation {
+    if !args.updater_data_only {
         // Create PDB and install folder ZIPs
         println!("[+] Creating zip files...");
         packager.create_zips().context("[!] Creating zip files failed")?;
@@ -69,7 +69,7 @@ fn main() -> Result<()> {
         signer.sign_file(&mf).context("[!] Signing file failed")?;
     }
 
-    if !args.skip_preparation && conf.post.copy_to_old {
+    if !args.updater_data_only && conf.post.copy_to_old {
         println!("[+] Copying install dir to previous version directory...");
         steps::post::copy_to_old(&conf).context("[!] Copying files failed")?;
     }

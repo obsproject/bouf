@@ -41,9 +41,9 @@ pub struct MainArgs {
     pub private_key: Option<PathBuf>,
 
     // Optional flags
-    /// Skip creating NSIS installer
+    /// Create only delta patches and manifest
     #[clap(long, value_parser, default_value_t = false)]
-    pub skip_preparation: bool,
+    pub updater_data_only: bool,
     /// Skip creating NSIS installer
     #[clap(long, value_parser, default_value_t = false)]
     pub skip_installer: bool,
