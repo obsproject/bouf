@@ -33,7 +33,7 @@ toml = "0.5.9"
 bsdiff = { git = "https://github.com/jp9000/bsdiff-rs", branch = "tail-end-optimization" }
 xz2 = "0.1.7"
 # singing
-base64 = "0.13.0"
+base64 = "0.20.0"
 rsa = { version = "0.6.1", features = ["pem"] }
 sha2 = "0.10.2"
 # hashing
