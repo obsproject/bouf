@@ -313,7 +313,7 @@ impl<'a> Generator<'a> {
                 // Ensure directories exist (Note: this is thread-safe in Rust!)
                 fs::create_dir_all(outfile.parent().unwrap()).expect("Failed creating folder!");
                 utils::bsdiff::create_patch(&patch.old_file, &patch.new_file, &outfile)
-                    .expect("Creating hash failed horribly.");
+                    .expect("Creating delta patch failed horribly.");
             });
 
         // If any patches were assigned to the non-parallel patch list run them here
@@ -333,7 +333,7 @@ impl<'a> Generator<'a> {
                 let outfile = self.out_path.join(patch_filename);
                 fs::create_dir_all(outfile.parent().unwrap()).expect("Failed creating folder!");
                 utils::bsdiff::create_patch(&patch.old_file, &patch.new_file, &outfile)
-                    .expect("Creating hash failed horribly.");
+                    .expect("Creating delta patch failed horribly.");
             });
         }
 
