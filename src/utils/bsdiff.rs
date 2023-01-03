@@ -2,8 +2,8 @@ use std::fs::File;
 use std::io::{BufReader, Cursor, Read, Result, Seek, SeekFrom, Write};
 use std::path::Path;
 
-use bsdiff::diff::diff;
-use bsdiff::patch::patch as bspatch;
+use bsdiff::diff;
+use bsdiff::patch as bspatch;
 use xz2::read::XzDecoder;
 use xz2::write::XzEncoder;
 
