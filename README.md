@@ -24,7 +24,7 @@ Additionally, the following utilities are provided:
 ## Usage:
 
 ```
-bouf 0.3.0
+bouf 0.3.1
 
 USAGE:
     bouf.exe [OPTIONS] --config <Config file> --version <Major.Minor.Patch[-(rc|beta)Num]>
@@ -46,7 +46,7 @@ OPTIONS:
         --skip-installer                                Skip creating NSIS installer
         --skip-manifest-signing                         Skip signing manifest
         --skip-patches                                  Skip creating delta patches
-        --skip-preparation                              Skip creating NSIS installer
+        --updater-data-only                             Create only delta patches and manifest
     -v, --version <Major.Minor.Patch[-(rc|beta)Num]>    OBS main version
 ```
 
@@ -65,4 +65,9 @@ and may not be redistributed under the Apache-2 terms.
 
 # ToDo
 
-- Go through older code and replace `.expect()`s and `panic!`s with anyhow errors
+- Go through older code and replace `.expect()`s and `panic!`s with anyhow errors 
+ + This will require some larger changes in some codepaths, do this later...
+- Use proper logging with levels and timestamped output
+- Change "overrides"
+ * Add "overrides_signed" to allow for additions/overrides that still get signed
+ * Improve description in example config
