@@ -60,7 +60,7 @@ pub fn apply_patch(old: &Path, new: &Path, patch: &Path) -> Result<FileInfo> {
     // Create LZMA reader
     let mut reader = XzDecoder::new(&mut patch_data);
     // Create new buffer and patch it
-    let mut new_buf = vec![0; size];
+    let mut new_buf = Vec::with_capacity(size);
     bspatch(&old_buf, &mut reader, &mut new_buf)?;
     new_file.write_all(&new_buf)?;
 
