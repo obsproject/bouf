@@ -66,8 +66,6 @@ and may not be redistributed under the Apache-2 terms.
 # ToDo
 
 - Go through older code and replace `.expect()`s and `panic!`s with anyhow errors 
- + This will require some larger changes in some codepaths, do this later...
+  + This will require some larger changes in some codepaths, do this later...
 - Use proper logging with levels and timestamped output
-- Change "overrides"
- * Add "overrides_signed" to allow for additions/overrides that still get signed
- * Improve description in example config
+

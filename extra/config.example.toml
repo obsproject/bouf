@@ -23,12 +23,17 @@ excludes = [
     "bin/32bit",
     "obs-plugins/32bit",
 ]
-# Overrides files in input dir with specified ones.
-# Note: These files will also be excluded from the codesign/pdb stripping step
-# Note: This can also be used to add additional files to a build directory
+
+# Overrides/adds files during copy step. These files will NOT be signed or stripped
 # overrides = [
 #     ["data/obs-plugins/win-capture/graphics-hook64.dll", "C:/path/to/override/graphics-hook64.dll"],
 #     ["data/obs-plugins/win-capture/graphics-hook64.pdb", "C:/path/to/override/graphics-hook64.pdb"],
+# ]
+
+# Overrides/adds files during copy step. These files WILL be signed and stripped
+# overrides_sign = [
+#     ["data/obs-plugins/win-capture/graphics-hook32.dll", "C:/path/to/override/graphics-hook32.dll"],
+#     ["data/obs-plugins/win-capture/graphics-hook32.pdb", "C:/path/to/override/graphics-hook32.pdb"],
 # ]
 
 [prepare.codesign]

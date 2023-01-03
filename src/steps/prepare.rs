@@ -46,9 +46,14 @@ impl<'a> Preparator<'a> {
 
     /// Copy input files to "install" dir
     fn copy(&self) -> Result<()> {
-        let mut overrides: HashSet<&String> = HashSet::new();
+        let copy_opts = &self.config.prepare.copy;
+
         // Convert to hash set for fast lookup
-        self.config.prepare.copy.overrides.iter().for_each(|(obs_path, _)| {
+        let mut overrides: HashSet<&String> = HashSet::new();
+        copy_opts.overrides.iter().for_each(|(obs_path, _)| {
+            overrides.insert(obs_path);
+        });
+        copy_opts.overrides_sign.iter().for_each(|(obs_path, _)| {
             overrides.insert(obs_path);
         });
 
@@ -74,14 +79,7 @@ impl<'a> Preparator<'a> {
                 continue;
             }
             // Check relative path against excludes
-            if self
-                .config
-                .prepare
-                .copy
-                .excludes
-                .iter()
-                .any(|x| relative_path_str.contains(x))
-            {
+            if copy_opts.excludes.iter().any(|x| relative_path_str.contains(x)) {
                 continue;
             }
             let file_path = self.install_path.join(relative_path);
@@ -93,8 +91,8 @@ impl<'a> Preparator<'a> {
         }
 
         // Copy override files over
-        for (ins_path, ovr_path) in &self.config.prepare.copy.overrides {
-            if fs::metadata(ovr_path).is_err() {
+        for (ins_path, ovr_path) in [copy_opts.overrides.as_slice(), copy_opts.overrides_sign.as_slice()].concat() {
+            if fs::metadata(&ovr_path).is_err() {
                 bail!("Override file \"{}\" does not exist!", ovr_path)
             }
 

@@ -65,6 +65,7 @@ pub struct PreparationOptions {
 pub struct CopyOptions {
     pub excludes: Vec<String>,
     pub overrides: Vec<(String, String)>,
+    pub overrides_sign: Vec<(String, String)>,
 }
 
 #[derive(Deserialize, Default)]
