@@ -41,7 +41,7 @@ blake2 = "0.10.4"
 # parallel processing
 rayon = "1.5.3"
 indicatif = { version = "0.17.0", features = ["rayon"] }
-hashbrown = { version = "0.12", features = ["rayon", "serde"] }
+hashbrown = { version = "0.13", features = ["rayon", "serde"] }
 
 # Used to find signtool for codesigning
 [target.'cfg(windows)'.dependencies]
