@@ -128,7 +128,7 @@ impl<'a> Packaging<'a> {
         let hash = hash_file(&self.config.package.updater.vc_redist_path);
         manifest.vc2019_redist_x64 = hash.hash;
         // Add notes
-        manifest.notes = run_pandoc(&self.config.package.updater.notes_files, &self.config.env)?;
+        manifest.notes = run_pandoc(&self.config.package.updater.notes_file, &self.config.env)?;
         manifest.to_file(&manifest_path, self.config.package.updater.pretty_json)?;
 
         Ok(manifest_path)

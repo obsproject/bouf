@@ -131,7 +131,7 @@ pub struct ZipOptions {
 pub struct UpdaterOptions {
     pub skip_sign: bool,
     pub pretty_json: bool,
-    pub notes_files: PathBuf,
+    pub notes_file: PathBuf,
     pub updater_path: PathBuf,
     pub private_key: Option<PathBuf>,
     pub vc_redist_path: PathBuf,
@@ -221,7 +221,21 @@ impl Config {
             }
             // This function will just return the original path if it doesn't succeed.
             self.env.output_dir = misc::recursive_canonicalize(&self.env.output_dir);
-            // ToDo Check other files (nsis script, updater, vcredist)
+            // ToDo Check other files (nsis script, updater)
+
+            // Check that notes and vc redist files exists
+            if !self.package.updater.vc_redist_path.exists() {
+                bail!(
+                    "Release notes file not found at \"{}\"!",
+                    self.package.updater.vc_redist_path.to_str().unwrap()
+                )
+            }
+            if !self.package.updater.notes_file.exists() {
+                bail!(
+                    "Release notes file not found at \"{}\"!",
+                    self.package.updater.notes_file.to_str().unwrap()
+                )
+            }
         }
         // Check that config defines at least one package
         if self.generate.packages.is_empty() {
