@@ -132,6 +132,8 @@ private_key = "C:/Path/to/privkey.pem"
 # not implemented yet (use bouf-sign to sign updater.exe separately if required)
 # updater_path = "C:/Path/to/updater.exe"
 vc_redist_path = "C:/path/to/vcredist"
+# File containing release notes, should be a pandoc compatible format (e.g. RST or Markdown)
+notes_file = "C:/path/to/release_notes.rst"
 
 [post]
 # move processed input directory to "previous" folder after packaging is done
