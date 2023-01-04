@@ -72,8 +72,16 @@ impl<'a> Preparator<'a> {
         {
             let file: DirEntry = file;
             // Get a path relative to the input directory for lookup/copy path
-            let relative_path = file.path().strip_prefix(&self.input_path).unwrap().to_str().unwrap();
-            let relative_path_str = String::from(relative_path).replace('\\', "/");
+            let relative_path = file.path().strip_prefix(&self.input_path).unwrap();
+            let relative_path_str = String::from(relative_path.to_str().unwrap()).replace('\\', "/");
+
+            if !relative_path.starts_with("bin")
+                && !relative_path.starts_with("data")
+                && !relative_path.starts_with("obs-plugins")
+            {
+                continue;
+            }
+
             // Check against overrides
             if overrides.contains(&relative_path_str) {
                 continue;
