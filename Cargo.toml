@@ -1,6 +1,6 @@
 [package]
 name = "bouf"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Dennis <dennis@obsproject.com>"]
 edition = "2021"
 autobins = false
