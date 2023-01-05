@@ -1,7 +1,9 @@
+use std::cmp::Ordering;
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Result};
+use hashbrown::HashSet;
 use serde::Deserialize;
 use toml;
 
@@ -63,9 +65,11 @@ pub struct PreparationOptions {
 #[derive(Deserialize, Default)]
 #[serde(default)]
 pub struct CopyOptions {
-    pub excludes: Vec<String>,
+    pub excludes: HashSet<String>,
     pub overrides: Vec<(String, String)>,
     pub overrides_sign: Vec<(String, String)>,
+    pub include: HashSet<String>,
+    pub exclude: HashSet<String>,
 }
 
 #[derive(Deserialize, Default)]
@@ -143,6 +147,28 @@ pub struct PostOptions {
     pub copy_to_old: bool,
 }
 
+impl From<&ObsVersion> for u32 {
+    fn from(obsver: &ObsVersion) -> Self {
+        let mut ver = 0;
+        ver += (obsver.version_major as u32) << 24;
+        ver += (obsver.version_minor as u32) << 16;
+        ver += (obsver.version_patch as u32) << 8;
+        ver += (obsver.rc as u32) << 4;
+        ver += obsver.beta as u32;
+
+        ver
+    }
+}
+
+impl PartialOrd for ObsVersion {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        let self_ver: u32 = self.into();
+        let other_ver: u32 = other.into();
+
+        Some(self_ver.cmp(&other_ver))
+    }
+}
+
 impl Config {
     pub fn set_version(&mut self, version_string: &String, beta_num: u8, rc_num: u8) -> Result<()> {
         self.obs_version = misc::parse_version(version_string)?;
@@ -185,7 +211,16 @@ impl Config {
         if let Some(privkey) = &args.private_key {
             self.package.updater.private_key = Some(privkey.to_owned());
         }
-        // Todo remaining args
+
+        if let Some(include) = &args.include {
+            for filter in include {
+                self.prepare.copy.include.insert(filter.to_owned());
+            }
+        } else if let Some(exclude) = &args.exclude {
+            for filter in exclude {
+                self.prepare.copy.exclude.insert(filter.to_owned());
+            }
+        }
 
         self.validate(true, true)
     }
@@ -224,6 +259,15 @@ impl Config {
                 }
                 Err(e) => bail!("Previous dir error: {}", e),
             }
+            // Ensure that at least one older version exists when exclude/include is used
+            if !self.prepare.copy.include.is_empty() || !self.prepare.copy.exclude.is_empty() {
+                if !has_subdirectory(self.env.previous_dir.join("pdbs")) {
+                    bail!("Previous PDBs dir has no items, but --exclude or --include used!")
+                } else if !has_subdirectory(self.env.previous_dir.join("builds")) {
+                    bail!("Previous Builds dir has no items, but --exclude or --include used!")
+                }
+            }
+
             // This function will just return the original path if it doesn't succeed.
             self.env.output_dir = misc::recursive_canonicalize(&self.env.output_dir);
             // ToDo Check other files (nsis script, updater)
@@ -260,4 +304,16 @@ impl Config {
 
         Ok(config)
     }
+}
+
+fn has_subdirectory(input: PathBuf) -> bool {
+    for item in fs::read_dir(input).unwrap().flatten() {
+        if let Ok(meta) = item.metadata() {
+            if meta.is_dir() {
+                return true;
+            }
+        }
+    }
+
+    false
 }

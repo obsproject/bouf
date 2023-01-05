@@ -17,8 +17,8 @@ pdbcopy_path = "C:/Program Files (x86)/Windows Kits/10/Debuggers/x64/pdbcopy.exe
 empty_output_dir = false
 
 [prepare.copy]
-# This system is 64-bit only, so ignore 32 bit build files
-# Note that all these filters are case-sensitive!
+
+# These files will *never* be copied
 excludes = [
     "bin/32bit",
     "obs-plugins/32bit",
@@ -35,6 +35,12 @@ excludes = [
 #     ["data/obs-plugins/win-capture/graphics-hook32.dll", "C:/path/to/override/graphics-hook32.dll"],
 #     ["data/obs-plugins/win-capture/graphics-hook32.pdb", "C:/path/to/override/graphics-hook32.pdb"],
 # ]
+
+# NOTE: The following two options are mutually exclusive, and should be specified via the command line switches instead
+# Files matching these will be copied from the latest previous build instead
+# exclude = ["win-capture"]
+# Files not matching these will be copied from the latest previous build instead
+# include = ["win-dshow"]
 
 [prepare.codesign]
 skip_sign = false
