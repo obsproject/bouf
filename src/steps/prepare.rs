@@ -32,15 +32,16 @@ impl<'a> Preparator<'a> {
 
     /// Create/clear output directory
     fn ensure_output_dir(&self) -> Result<()> {
-        if self.install_path.exists() && self.install_path.read_dir()?.next().is_some() {
+        let out_dir = &self.config.env.output_dir;
+        if out_dir.exists() && out_dir.read_dir()?.next().is_some() {
             if !self.config.prepare.empty_output_dir {
-                bail!("Folder not empty");
+                bail!("Output folder not empty!");
             }
             println!("[!] Deleting previous output dir...");
-            std::fs::remove_dir_all(&self.install_path)?;
+            std::fs::remove_dir_all(out_dir)?;
         }
 
-        std::fs::create_dir_all(&self.install_path)?;
+        std::fs::create_dir_all(out_dir)?;
         Ok(())
     }
 
