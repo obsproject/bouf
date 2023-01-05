@@ -24,7 +24,7 @@ Additionally, the following utilities are provided:
 ## Usage:
 
 ```
-bouf 0.3.1
+bouf 0.3.2
 
 USAGE:
     bouf.exe [OPTIONS] --config <Config file> --version <Major.Minor.Patch[-(rc|beta)Num]>
@@ -35,8 +35,10 @@ OPTIONS:
     -c, --config <Config file>
         --clear-output                                  Clear existing output directory
         --commit <commit hash>                          Commit hash used in manifest
+        --exclude <FILTER>
     -h, --help                                          Print help information
     -i, --input <new build>
+        --include <FILTER>
         --note-file <file.rtf>                          File containing release notes
     -o, --output <output dir>
     -p, --previous <old builds>
@@ -68,4 +70,6 @@ and may not be redistributed under the Apache-2 terms.
 - Go through older code and replace `.expect()`s and `panic!`s with anyhow errors 
   + This will require some larger changes in some codepaths, do this later...
 - Use proper logging with levels and timestamped output
-
+- Figure out how to deal with nightlies
+  + Disable copy to previous directory?
+  + No deltas to avoid problems?
