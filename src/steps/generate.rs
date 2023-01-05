@@ -51,7 +51,7 @@ impl<'a> Generator<'a> {
     pub fn init(conf: &'a Config, ran_prep: bool) -> Self {
         let mut ret = Self {
             config: conf,
-            old_path: misc::normalize_path(&conf.env.previous_dir),
+            old_path: misc::normalize_path(&conf.env.previous_dir.join("builds")),
             out_path: misc::normalize_path(&conf.env.output_dir),
             inp_path: misc::normalize_path(&conf.env.input_dir),
             analysis: None,
