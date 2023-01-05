@@ -216,7 +216,12 @@ impl Config {
                 Err(e) => bail!("Input dir error: {}", e),
             }
             match fs::canonicalize(&self.env.previous_dir) {
-                Ok(res) => self.env.previous_dir = res,
+                Ok(res) => {
+                    // Ensure subdirectories exist
+                    fs::create_dir_all(res.join("builds"))?;
+                    fs::create_dir_all(res.join("pdbs"))?;
+                    self.env.previous_dir = res;
+                }
                 Err(e) => bail!("Previous dir error: {}", e),
             }
             // This function will just return the original path if it doesn't succeed.
