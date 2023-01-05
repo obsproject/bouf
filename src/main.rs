@@ -70,7 +70,7 @@ fn main() -> Result<()> {
     }
 
     if !args.updater_data_only && conf.post.copy_to_old {
-        println!("[+] Copying install dir to previous version directory...");
+        println!("[+] Copying install dir and PDBs to backup directory...");
         steps::post::copy_to_old(&conf).context("[!] Copying files failed")?;
     }
 
