@@ -23,7 +23,13 @@ pub struct MainArgs {
     #[clap(long, value_parser, value_name = "Beta branch")]
     pub branch: Option<String>,
     /// Commit hash used in manifest
-    #[clap(long, value_parser, value_name = "commit hash")]
+    #[clap(
+        long,
+        value_parser,
+        value_name = "commit hash",
+        conflicts_with = "exclude",
+        conflicts_with = "include"
+    )]
     pub commit: Option<String>,
 
     // Optional overrides
@@ -39,6 +45,12 @@ pub struct MainArgs {
     /// Falls back to "UPDATER_PRIVATE_KEY" env var
     #[clap(long, value_parser, value_name = "file.pem")]
     pub private_key: Option<PathBuf>,
+
+    // Optional filters
+    #[clap(long, value_parser, value_name = "FILTER", conflicts_with = "exclude")]
+    pub include: Option<Vec<String>>,
+    #[clap(long, value_parser, value_name = "FILTER", conflicts_with = "include")]
+    pub exclude: Option<Vec<String>>,
 
     // Optional flags
     /// Create only delta patches and manifest
