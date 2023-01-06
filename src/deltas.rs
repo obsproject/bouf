@@ -22,7 +22,8 @@ struct Args {
 fn main() -> Result<()> {
     let args: Args = Args::parse();
     println!("[+] Loading config...");
-    let conf = Config::from_file(&args.config)?;
+    let mut conf = Config::from_file(&args.config)?;
+    conf.validate(false, true)?;
     let mut gen = Generator::init(&conf, false);
     println!("[+] Running generator...");
     gen.create_patches().context("[!] Creating delta patches failed!")?;
