@@ -141,6 +141,10 @@ impl<'a> Preparator<'a> {
         let opts = &self.config.prepare.strip_pdbs;
         let copy_opts = &self.config.prepare.copy;
 
+        let is_prerelease = self.config.obs_version.rc > 0
+            || self.config.obs_version.beta > 0
+            || !self.config.obs_version.commit.is_empty();
+
         println!(
             "[+] Copying/stripping PDBs from \"{}\" to \"{}\"...",
             self.install_path.display(),
@@ -162,8 +166,9 @@ impl<'a> Preparator<'a> {
             if let Some(_parent) = new_path.parent() {
                 fs::create_dir_all(_parent)?;
             }
-            // Skip files excluded or that were overrides
-            if opts.exclude.iter().any(|x| relative_path_str.contains(x))
+            // Skip files excluded or that were overrides, also do not strip for betas if enabled
+            if (opts.skip_for_prerelease && is_prerelease)
+                || opts.exclude.iter().any(|x| relative_path_str.contains(x))
                 || copy_opts.overrides.iter().any(|(p, _)| relative_path_str == *p)
             {
                 fs::copy(file.path(), &new_path)?;
