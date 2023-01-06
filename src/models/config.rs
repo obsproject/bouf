@@ -86,6 +86,7 @@ pub struct CodesignOptions {
 #[serde(default)]
 pub struct StripPDBOptions {
     pub exclude: Vec<String>,
+    pub skip_for_prerelease: bool,
 }
 
 #[derive(Deserialize, Default)]

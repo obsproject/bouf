@@ -56,6 +56,8 @@ exclude = [
     "obs64.pdb",
     "obs.pdb",
 ]
+# Do not strip PDBs for pre-release builds
+skip_for_prerelease = true
 
 ## Delta patch generation
 [generate]
