@@ -116,10 +116,12 @@ impl<'a> Packaging<'a> {
     }
 
     pub fn finalise_manifest(&self, manifest: &mut Manifest) -> Result<PathBuf> {
-        let manifest_filename = if self.config.env.branch.is_empty() {
+        let branch = &self.config.env.branch;
+
+        let manifest_filename = if branch.is_empty() || branch == "stable" {
             "manifest.json".to_string()
         } else {
-            format!("manifest_{}.json", self.config.env.branch)
+            format!("manifest_{}.json", branch)
         };
 
         let manifest_path = self.config.env.output_dir.join(manifest_filename);
