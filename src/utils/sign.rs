@@ -3,7 +3,7 @@ use std::{env, fs};
 
 use anyhow::Result;
 use rsa::Hash::SHA2_512;
-use rsa::{pkcs8::DecodePrivateKey, PaddingScheme, RsaPrivateKey};
+use rsa::{pkcs1::DecodeRsaPrivateKey, pkcs8::DecodePrivateKey, PaddingScheme, RsaPrivateKey};
 use sha2::Digest;
 
 #[derive(Default)]
@@ -31,7 +31,11 @@ impl<'a> Signer<'a> {
             pem = String::from_utf8(decoded)?;
         }
 
-        let pkey = RsaPrivateKey::from_pkcs8_pem(pem.as_str())?;
+        let pkey: RsaPrivateKey = if pem.contains("RSA PRIVATE KEY") {
+            RsaPrivateKey::from_pkcs1_pem(pem.as_str())?
+        } else {
+            RsaPrivateKey::from_pkcs8_pem(pem.as_str())?
+        };
         self.private_key = Some(pkey);
 
         Ok(())
