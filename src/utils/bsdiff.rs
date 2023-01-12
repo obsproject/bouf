@@ -32,7 +32,7 @@ pub fn create_patch(old: &Path, new: &Path, patch: &Path) -> Result<FileInfo> {
     writer.finish()?;
 
     patch_file.write_all(b"JIMSLEY/BSDIFF43")?;
-    patch_file.write_all(&((new_buf.len() as u64).to_le_bytes()))?;
+    patch_file.write_all(&((new_buf.len() as isize).to_le_bytes()))?;
     patch_file.write_all(out_data.get_ref())?;
 
     Ok(hash_file(patch))
@@ -56,15 +56,29 @@ pub fn apply_patch(old: &Path, new: &Path, patch: &Path) -> Result<FileInfo> {
     // Read size of output file
     let mut size_buf = [0; 8];
     patch_data.read_exact(&mut size_buf)?;
-    let size = u64::from_le_bytes(size_buf) as usize;
+    let size = offtin(size_buf);
+    if size < 0 {
+        panic!("Patch output file size < 0! {}", size)
+    }
     // Create LZMA reader
     let mut reader = XzDecoder::new(&mut patch_data);
     // Create new buffer and patch it
-    let mut new_buf = Vec::with_capacity(size);
+    let mut new_buf = Vec::with_capacity(size as usize);
     bspatch(&old_buf, &mut reader, &mut new_buf)?;
     new_file.write_all(&new_buf)?;
 
     Ok(hash_file(new))
+}
+
+/// Taken from bsdiff-rs/src/patch.rs
+#[inline]
+fn offtin(buf: [u8; 8]) -> i64 {
+    let y = i64::from_le_bytes(buf);
+    if 0 == y & (1 << 63) {
+        y
+    } else {
+        -(y & !(1 << 63))
+    }
 }
 
 #[cfg(test)]
