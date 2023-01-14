@@ -32,6 +32,7 @@ toml = "0.5.9"
 # delta patching
 bsdiff = { git = "https://github.com/jp9000/bsdiff-rs", branch = "tail-end-optimization" }
 xz2 = "0.1.7"
+zstd = "0.12.2"
 # singing
 base64 = "0.13.0"
 rsa = { version = "0.6.1", features = ["pem"] }
