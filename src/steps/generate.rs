@@ -7,7 +7,7 @@ use hashbrown::{HashMap, HashSet};
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressFinish, ProgressIterator, ProgressStyle};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
-use crate::models::config::Config;
+use crate::models::config::{Config, PatchType};
 use crate::models::manifest::{FileEntry, Manifest, Package};
 use crate::utils;
 use crate::utils::hash::FileInfo;
@@ -299,7 +299,17 @@ impl<'a> Generator<'a> {
             .with_style(style.clone())
             .with_finish(ProgressFinish::AndLeave);
 
-        println!("[+] Creating delta-patches...");
+        println!(
+            "[+] Creating delta-patches... (using: {:?})",
+            self.config.generate.patch_type
+        );
+        let patch_fun = match self.config.generate.patch_type {
+            PatchType::BsdiffLzma => utils::bsdiff::create_patch,
+            PatchType::BidiffLzma => utils::bidiff::create_patch,
+            PatchType::Zstd => utils::zstd::create_patch,
+            PatchType::Lzma => utils::lzma::create_patch,
+        };
+
         patch_list_mt
             .par_iter()
             .progress_with(progress_bar_mt)
@@ -312,8 +322,7 @@ impl<'a> Generator<'a> {
                 let outfile = self.out_path.join(patch_filename);
                 // Ensure directories exist (Note: this is thread-safe in Rust!)
                 fs::create_dir_all(outfile.parent().unwrap()).expect("Failed creating folder!");
-                utils::bsdiff::create_patch(&patch.old_file, &patch.new_file, &outfile)
-                    .expect("Creating delta patch failed horribly.");
+                patch_fun(&patch.old_file, &patch.new_file, &outfile).expect("Creating patch failed horribly.");
             });
 
         // If any patches were assigned to the non-parallel patch list run them here
@@ -332,8 +341,7 @@ impl<'a> Generator<'a> {
                 );
                 let outfile = self.out_path.join(patch_filename);
                 fs::create_dir_all(outfile.parent().unwrap()).expect("Failed creating folder!");
-                utils::bsdiff::create_patch(&patch.old_file, &patch.new_file, &outfile)
-                    .expect("Creating delta patch failed horribly.");
+                patch_fun(&patch.old_file, &patch.new_file, &outfile).expect("Creating patch failed horribly.");
             });
         }
 
