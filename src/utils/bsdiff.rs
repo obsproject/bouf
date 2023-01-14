@@ -1,7 +1,8 @@
 use std::fs::File;
-use std::io::{BufReader, Cursor, Read, Result, Seek, SeekFrom, Write};
+use std::io::{BufReader, Cursor, Read, Seek, SeekFrom, Write};
 use std::path::Path;
 
+use anyhow::Result;
 use bsdiff::diff;
 use bsdiff::patch as bspatch;
 use xz2::read::XzDecoder;
