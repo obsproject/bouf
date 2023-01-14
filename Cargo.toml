@@ -20,6 +20,11 @@ path = "src/sign.rs"
 name = "bouf-deltas"
 path = "src/deltas.rs"
 
+# Temporary benchmark utility
+[[bin]]
+name = "bouf-bench"
+path = "src/bench.rs"
+
 [dependencies]
 # general
 anyhow = "1.0.62"
