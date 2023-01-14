@@ -48,6 +48,11 @@ rayon = "1.5.3"
 indicatif = { version = "0.17.0", features = ["rayon"] }
 hashbrown = { version = "0.12", features = ["rayon", "serde"] }
 
+# Testing
+zstd = "0.12"
+bidiff = "1.0.0"
+bipatch = "1.0.0"
+
 # Used to find signtool for codesigning
 [target.'cfg(windows)'.dependencies]
 winreg = "0.10.1"
