@@ -223,70 +223,29 @@ impl Config {
             }
         }
 
-        self.validate(true, true)
+        self.validate(false)
     }
 
-    pub fn validate(&mut self, check_binaries: bool, check_paths: bool) -> Result<()> {
-        // Check file paths (for binaries, also check if they are in %PATH%)
-        if check_binaries {
-            misc::check_binary_path(&mut self.env.pdbcopy_path)?;
-            misc::check_binary_path(&mut self.env.makensis_path)?;
-            misc::check_binary_path(&mut self.env.sevenzip_path)?;
-            misc::check_binary_path(&mut self.env.pandoc_path)?;
+    pub fn validate(&mut self, deltas_only: bool) -> Result<()> {
+        // Output folder cannot be checked as it may not exist yet
+        match fs::canonicalize(&self.env.input_dir) {
+            Ok(res) => self.env.input_dir = res,
+            Err(e) => bail!("Input dir error: {}", e),
         }
-        // Check if private key is set correctly (if signing is enabled)
-        if !self.package.updater.skip_sign {
-            if let Err(e) = Signer::check_key(self.package.updater.private_key.as_ref()) {
-                bail!("Failed loading private key: {}", e)
-            }
-        }
-        // Check if codesigning parameters are set (if enabled)
-        if !self.prepare.codesign.skip_sign {
-            // ToDo
-        }
-        // Check file/directory paths
-        if check_paths {
-            // Output folder cannot be checked as it may not exist yet
-            match fs::canonicalize(&self.env.input_dir) {
-                Ok(res) => self.env.input_dir = res,
-                Err(e) => bail!("Input dir error: {}", e),
-            }
-            match fs::canonicalize(&self.env.previous_dir) {
-                Ok(res) => {
-                    // Ensure subdirectories exist
-                    fs::create_dir_all(res.join("builds"))?;
-                    fs::create_dir_all(res.join("pdbs"))?;
-                    self.env.previous_dir = res;
-                }
-                Err(e) => bail!("Previous dir error: {}", e),
-            }
-            // Ensure that at least one older version exists when exclude/include is used
-            if !self.prepare.copy.include.is_empty() || !self.prepare.copy.exclude.is_empty() {
-                if !has_subdirectory(self.env.previous_dir.join("pdbs")) {
-                    bail!("Previous PDBs dir has no items, but --exclude or --include used!")
-                } else if !has_subdirectory(self.env.previous_dir.join("builds")) {
-                    bail!("Previous Builds dir has no items, but --exclude or --include used!")
-                }
-            }
 
-            // This function will just return the original path if it doesn't succeed.
-            self.env.output_dir = misc::recursive_canonicalize(&self.env.output_dir);
-            // ToDo Check other files (nsis script, updater)
-
-            // Check that notes and vc redist files exists
-            if !self.package.updater.vc_redist_path.exists() {
-                bail!(
-                    "Release notes file not found at \"{}\"!",
-                    self.package.updater.vc_redist_path.to_str().unwrap()
-                )
+        // Ensure previous folder and subdirectories exist
+        match fs::canonicalize(&self.env.previous_dir) {
+            Ok(res) => {
+                fs::create_dir_all(res.join("builds"))?;
+                fs::create_dir_all(res.join("pdbs"))?;
+                self.env.previous_dir = res;
             }
-            if !self.package.updater.notes_file.exists() {
-                bail!(
-                    "Release notes file not found at \"{}\"!",
-                    self.package.updater.notes_file.to_str().unwrap()
-                )
-            }
+            Err(e) => bail!("Previous dir error: {}", e),
         }
+
+        // This function will just return the original path if it doesn't succeed.
+        self.env.output_dir = misc::recursive_canonicalize(&self.env.output_dir);
+
         // Check that config defines at least one package
         if self.generate.packages.is_empty() {
             bail!("No packages defined in config!");
@@ -294,6 +253,53 @@ impl Config {
         // Check if a manifest package is defined that does not have any filters
         if !self.generate.packages.iter().any(|f| f.include_files.is_none()) {
             bail!("No catchall package exists in conifg!");
+        }
+
+        // This is all we care about if we're only generating deltas
+        if deltas_only {
+            return Ok(());
+        }
+
+        // Check file paths (for binaries, also check if they are in %PATH%)
+        misc::check_binary_path(&mut self.env.pdbcopy_path)?;
+        misc::check_binary_path(&mut self.env.makensis_path)?;
+        misc::check_binary_path(&mut self.env.sevenzip_path)?;
+        misc::check_binary_path(&mut self.env.pandoc_path)?;
+
+        // Check if private key is set correctly (if signing is enabled)
+        if !self.package.updater.skip_sign {
+            if let Err(e) = Signer::check_key(self.package.updater.private_key.as_ref()) {
+                bail!("Failed loading private key: {}", e)
+            }
+        }
+
+        // Check if codesigning parameters are set (if enabled)
+        if !self.prepare.codesign.skip_sign {
+            // ToDo
+        }
+
+        // ToDo Check other files (nsis script, updater)
+        // Ensure that at least one older version exists when exclude/include is used
+        if !self.prepare.copy.include.is_empty() || !self.prepare.copy.exclude.is_empty() {
+            if !has_subdirectory(self.env.previous_dir.join("pdbs"))? {
+                bail!("Previous PDBs dir has no items, but --exclude or --include used!")
+            } else if !has_subdirectory(self.env.previous_dir.join("builds"))? {
+                bail!("Previous Builds dir has no items, but --exclude or --include used!")
+            }
+        }
+
+        // Check that notes and vc redist files exists
+        if !self.package.updater.vc_redist_path.exists() {
+            bail!(
+                "Release notes file not found at \"{}\"!",
+                self.package.updater.vc_redist_path.to_str().unwrap_or("<INVALID PATH>")
+            )
+        }
+        if !self.package.updater.notes_file.exists() {
+            bail!(
+                "Release notes file not found at \"{}\"!",
+                self.package.updater.notes_file.to_str().unwrap_or("<INVALID PATH>")
+            )
         }
 
         Ok(())
@@ -307,14 +313,17 @@ impl Config {
     }
 }
 
-fn has_subdirectory(input: PathBuf) -> bool {
-    for item in fs::read_dir(input).unwrap().flatten() {
+fn has_subdirectory(input: PathBuf) -> Result<bool> {
+    for item in fs::read_dir(input)?.flatten() {
         if let Ok(meta) = item.metadata() {
             if meta.is_dir() {
-                return true;
+                return Ok(true);
             }
         }
     }
+
+    Ok(false)
+}
 
     false
 }
