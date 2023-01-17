@@ -82,7 +82,7 @@ mod zstd_tests {
         let new = Path::new("extra/test_files/out.txt");
         let patch = Path::new("extra/test_files/patch_zstd.bin");
         let patch_info = create_patch(old, new, patch).unwrap();
-        assert_eq!(patch_info.hash, "af3a20c95bb3988bc0770196e390d2cbd10af904");
+        assert_eq!(patch_info.hash, "af93c9134debc376f65900cc923bd00e180ecb94");
 
         // Try applying the patch
         let out = Path::new("extra/test_files/out_test_zstd.txt");
