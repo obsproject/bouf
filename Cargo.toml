@@ -35,7 +35,7 @@ xz2 = "0.1.7"
 zstd = "0.12.2"
 # singing
 base64 = "0.13.0"
-rsa = { version = "0.6.1", features = ["pem"] }
+rsa = { version = "0.7.2", features = ["pem"] }
 sha2 = "0.10.2"
 # hashing
 blake2 = "0.10.4"
