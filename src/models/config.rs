@@ -219,10 +219,12 @@ impl Config {
             for filter in include {
                 self.prepare.copy.include.insert(filter.to_owned());
             }
+            self.prepare.copy.exclude.clear();
         } else if let Some(exclude) = &args.exclude {
             for filter in exclude {
                 self.prepare.copy.exclude.insert(filter.to_owned());
             }
+            self.prepare.copy.include.clear();
         }
 
         self.validate(false)
