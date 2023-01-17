@@ -281,8 +281,12 @@ impl Config {
         }
 
         // ToDo Check other files (nsis script, updater)
-        // Ensure that at least one older version exists when exclude/include is used
         if !self.prepare.copy.include.is_empty() || !self.prepare.copy.exclude.is_empty() {
+            // Having both sets of filters could lead to unexpected behaviour
+            if !self.prepare.copy.include.is_empty() && !self.prepare.copy.exclude.is_empty() {
+                bail!("Filter lists \"include\" or \"exclude\" cannot be used at the same time!")
+            }
+            // Ensure that at least one older version exists when exclude/include is used
             if !has_subdirectory(self.env.previous_dir.join("pdbs"))? {
                 bail!("Previous PDBs dir has no items, but --exclude or --include used!")
             } else if !has_subdirectory(self.env.previous_dir.join("builds"))? {
