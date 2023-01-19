@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::io;
-use std::io::{BufReader, Read, Seek, SeekFrom, Write};
+use std::io::{BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::path::Path;
 
 use anyhow::Result;
@@ -35,6 +35,22 @@ pub fn create_patch(old: &Path, new: &Path, patch: &Path) -> Result<FileInfo> {
     patch_file.write_all(&out_data)?;
 
     Ok(hash_file(patch))
+}
+
+/// Compress file with zstd
+pub fn compress_file(input: &Path, output: &Path) -> Result<FileInfo> {
+    let in_file = File::open(input).expect("Unable to open input file");
+    let out_file = File::create(output).expect("Unable to open output file");
+
+    let mut in_buf = BufReader::new(in_file);
+    let mut out_buf = BufWriter::new(out_file);
+    let mut writer = Encoder::new(&mut out_buf, ZSTD_LEVEL)?;
+
+    io::copy(&mut in_buf, &mut writer)?;
+    writer.finish()?;
+    out_buf.flush()?;
+
+    Ok(hash_file(output))
 }
 
 /// Apply OBS-zstd patch
