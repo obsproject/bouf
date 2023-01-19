@@ -1,6 +1,7 @@
 use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
 
 use anyhow::Result;
 use hashbrown::{HashMap, HashSet};
@@ -12,6 +13,7 @@ use crate::models::manifest::{FileEntry, Manifest, Package};
 use crate::utils;
 use crate::utils::hash::FileInfo;
 use crate::utils::misc;
+use crate::utils::zstd::compress_file;
 
 struct Patch {
     hash: String,
@@ -36,6 +38,7 @@ struct Analysis {
     patch_list: Vec<Patch>,
     // Input file hashmap
     input_map: HashMap<String, FileInfo>,
+    compressed_map: HashMap<String, FileInfo>,
     // Sets of added/new files as well as removed/seen ones for processing
     added_files: HashSet<String>,
     all_files: HashSet<String>,
@@ -207,10 +210,18 @@ impl<'a> Generator<'a> {
                 .input_map
                 .iter()
                 .filter(|(f, _)| *analysis.package_map.get(&**f).unwrap_or(&analysis.default_pkg) == package.name)
-                .map(|(f, v)| FileEntry {
-                    name: f.to_owned(),
-                    size: v.size,
-                    hash: v.hash.to_owned(),
+                .map(|(f, v)| {
+                    let c_hash: String = match analysis.compressed_map.get(f) {
+                        Some(fi) => fi.hash.to_owned(),
+                        None => String::new(),
+                    };
+
+                    FileEntry {
+                        name: f.to_owned(),
+                        size: v.size,
+                        hash: v.hash.to_owned(),
+                        compressed_hash: c_hash,
+                    }
                 })
                 .collect();
 
@@ -228,8 +239,8 @@ impl<'a> Generator<'a> {
     }
 
     /// Copy build to updater directory structure
-    fn copy_build(&self) {
-        let analysis = self.analysis.as_ref().unwrap();
+    fn copy_build(&mut self) {
+        let analysis = self.analysis.as_mut().unwrap();
         std::fs::create_dir_all(&self.out_path).expect("Failed to create output directory");
 
         let style =
@@ -238,19 +249,29 @@ impl<'a> Generator<'a> {
             .with_style(style)
             .with_finish(ProgressFinish::AndLeave);
 
+        let comp_map = Arc::new(Mutex::new(&mut analysis.compressed_map));
         let branch = &self.config.env.branch;
-        println!("[+] Copying new build to updater structure...");
+        println!("[+] Copying/Compressing new build to updater structure...");
         analysis
             .input_map
             .par_iter()
             .progress_with(progress_bar)
             .for_each(|(filename, _)| {
                 let package: &String = analysis.package_map.get(filename).unwrap_or(&analysis.default_pkg);
-                let patch_filename = format!("updater/update_studio/{branch}/{package}/{filename}");
+                let mut patch_filename = format!("updater/update_studio/{branch}/{package}/{filename}");
+                if self.config.generate.compress_files {
+                    patch_filename += ".zst";
+                }
                 let updater_file = self.out_path.join(patch_filename);
                 let build_file = self.inp_path.join(filename);
                 fs::create_dir_all(updater_file.parent().unwrap()).expect("Failed creating folder!");
-                fs::copy(build_file, updater_file).expect("Failed copying file!");
+
+                if self.config.generate.compress_files {
+                    let info = compress_file(&build_file, &updater_file).expect("Failed compressing file!");
+                    comp_map.lock().unwrap().insert(filename.to_owned(), info);
+                } else {
+                    fs::copy(build_file, updater_file).expect("Failed copying file!");
+                }
             });
     }
 
