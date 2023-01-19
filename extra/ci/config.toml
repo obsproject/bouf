@@ -23,9 +23,12 @@ exclude = [
 
 ## Delta patch generation
 [generate]
-exclude_from_parallel = [
-    "libcef.dll"
-]
+patch_type = "zstd"
+compress_files = true
+
+# exclude_from_parallel = [
+#     "libcef.dll"
+# ]
 
 [[generate.packages]]
 name = "obs-browser"
