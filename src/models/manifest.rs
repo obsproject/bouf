@@ -30,6 +30,7 @@ pub struct Package {
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct FileEntry {
+    pub compressed_hash: String,
     pub hash: String,
     pub name: String,
     pub size: u64,
