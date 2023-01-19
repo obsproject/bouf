@@ -211,8 +211,12 @@ impl Config {
         self.prepare.codesign.skip_sign = args.skip_codesigning || self.prepare.codesign.skip_sign;
         self.package.installer.skip_sign = args.skip_codesigning || self.package.installer.skip_sign;
         self.package.updater.skip_sign = args.skip_manifest_signing || self.package.updater.skip_sign;
+
         if let Some(privkey) = &args.private_key {
             self.package.updater.private_key = Some(privkey.to_owned());
+        }
+        if let Some(notes_file) = &args.notes_file {
+            self.package.updater.notes_file = fs::canonicalize(notes_file)?;
         }
 
         if let Some(include) = &args.include {
@@ -299,10 +303,11 @@ impl Config {
         // Check that notes and vc redist files exists
         if !self.package.updater.vc_redist_path.exists() {
             bail!(
-                "Release notes file not found at \"{}\"!",
+                "VC Redist file not found at \"{}\"!",
                 self.package.updater.vc_redist_path.to_str().unwrap_or("<INVALID PATH>")
             )
         }
+
         if !self.package.updater.notes_file.exists() {
             bail!(
                 "Release notes file not found at \"{}\"!",

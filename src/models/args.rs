@@ -41,7 +41,7 @@ pub struct MainArgs {
     pub output: Option<PathBuf>,
     /// File containing release notes
     #[clap(long, value_parser, value_name = "file.rtf")]
-    pub note_file: Option<PathBuf>,
+    pub notes_file: Option<PathBuf>,
     /// Falls back to "UPDATER_PRIVATE_KEY" env var
     #[clap(long, value_parser, value_name = "file.pem")]
     pub private_key: Option<PathBuf>,
