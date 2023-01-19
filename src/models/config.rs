@@ -15,6 +15,9 @@ use crate::utils::sign::Signer;
 fn get_default_branch() -> String {
     String::from("stable")
 }
+fn get_compression_default() -> bool {
+    false
+}
 
 #[derive(Deserialize, Default)]
 #[serde(default)]
@@ -96,6 +99,8 @@ pub struct GenerationOptions {
     #[serde(deserialize_with = "deserialize_patch_type")]
     pub patch_type: PatchType,
     pub skip_for_prerelease: bool,
+    #[serde(default = "get_compression_default")]
+    pub compress_files: bool,
     pub removed_files: Vec<String>,
     pub exclude_from_parallel: Vec<String>,
     pub exclude_from_removal: Vec<String>,

@@ -63,7 +63,8 @@ skip_for_prerelease = true
 [generate]
 # Delta patch type, supported are "bsdiff_lzma" and "zstd"
 patch_type = "bsdiff_lzma"
-
+# Whether or not to compress non-patch files
+compress_files = true
 # eclude files matching these patterns from being removed automatically
 # (e.g. legacy plugins no longer shipped with OBS but aren't broken yet)
 exclude_from_removal = [
