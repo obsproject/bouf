@@ -2,9 +2,8 @@ use std::path::PathBuf;
 use std::{env, fs};
 
 use anyhow::Result;
-use rsa::Hash::SHA2_512;
-use rsa::{pkcs1::DecodeRsaPrivateKey, pkcs8::DecodePrivateKey, PaddingScheme, RsaPrivateKey};
-use sha2::Digest;
+use rsa::sha2::{Digest, Sha512};
+use rsa::{pkcs1::DecodeRsaPrivateKey, pkcs8::DecodePrivateKey, Pkcs1v15Sign, RsaPrivateKey};
 
 #[derive(Default)]
 pub struct Signer<'a> {
@@ -48,10 +47,10 @@ impl<'a> Signer<'a> {
 
         // Create digest
         let data = fs::read(path)?;
-        let mut hasher = sha2::Sha512::new();
+        let mut hasher = Sha512::new();
         hasher.update(data);
         let res = hasher.finalize();
-        let pad = PaddingScheme::PKCS1v15Sign { hash: Some(SHA2_512) };
+        let pad = Pkcs1v15Sign::new::<Sha512>();
         let signature = self.private_key.as_ref().unwrap().sign(pad, &res)?;
 
         let new_ext = format!("{}.sig", path.extension().unwrap().to_str().unwrap());
