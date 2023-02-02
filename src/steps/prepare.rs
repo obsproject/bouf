@@ -294,8 +294,8 @@ fn copy_files(opts: &CopyOptions, input: &PathBuf, output: &Path, copying_old: b
             if !excludes.is_empty() && excludes.iter().any(|f| relative_path_str.contains(f)) {
                 continue;
             }
-        } else if always_copied && copying_old {
-            // Do not copy always copied files when copying old files
+        } else if copying_old {
+            // Do not copy old files for anything that doesn't pass the filters
             continue;
         }
 
