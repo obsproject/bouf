@@ -9,13 +9,13 @@ use crate::utils::sign::Signer;
 use clap::Parser;
 
 #[derive(Parser, Debug)]
-#[clap(about, long_about = None)]
+#[command(about, long_about = None)]
 struct Args {
     // Will use "UPDATER_PRIVATE_KEY" env var if not set
-    #[clap(short, long, value_parser, value_name = "Private key PEM file")]
+    #[arg(short, long, value_name = "Private key PEM file")]
     private_key: Option<PathBuf>,
 
-    #[clap(value_parser)]
+    #[arg()]
     files: Vec<PathBuf>,
 }
 

@@ -13,9 +13,9 @@ use crate::models::config::Config;
 use steps::generate::Generator;
 
 #[derive(Parser, Debug)]
-#[clap(about, long_about = None)]
+#[command(about, long_about = None)]
 struct Args {
-    #[clap(short, long, value_parser, value_name = "Config file")]
+    #[arg(short, long, value_name = "Config file")]
     pub config: PathBuf,
 }
 

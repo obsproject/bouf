@@ -27,7 +27,7 @@ walkdir = "2"
 serde = { version = "1.0.142", features = ["derive"] }
 serde_json = "1.0.83"
 # cli/config
-clap = { version = "3.2.16", features = ["derive"] }
+clap = { version = "4.1", features = ["derive", "wrap_help"] }
 toml = "0.7.0"
 # delta patching
 bsdiff = { git = "https://github.com/jp9000/bsdiff-rs", branch = "tail-end-optimization" }
