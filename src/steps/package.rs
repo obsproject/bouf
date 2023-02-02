@@ -31,6 +31,7 @@ impl<'a> Packaging<'a> {
     }
 
     #[cfg(windows)]
+    #[allow(clippy::uninlined_format_args)]
     pub fn run_nsis(&self) -> Result<()> {
         // ToDo make installer name more configurable
         let nsis_script = self.config.package.installer.nsis_script.canonicalize()?;
@@ -121,7 +122,7 @@ impl<'a> Packaging<'a> {
         let manifest_filename = if branch.is_empty() || branch == "stable" {
             "manifest.json".to_string()
         } else {
-            format!("manifest_{}.json", branch)
+            format!("manifest_{branch}.json")
         };
 
         let manifest_path = self.config.env.output_dir.join(manifest_filename);

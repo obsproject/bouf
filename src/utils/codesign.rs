@@ -64,12 +64,12 @@ fn locate_signtool() -> Result<PathBuf> {
     // Open 32-bit HKLM "Installed Roots" key
     let installed_roots_key = RegKey::predef(HKEY_LOCAL_MACHINE)
         .open_subkey_with_flags(installed_roots_key_path, KEY_READ | KEY_WOW64_32KEY)
-        .with_context(|| format!("Error opening registry key: {}", INSTALLED_ROOTS_REGKEY_PATH))?;
+        .with_context(|| format!("Error opening registry key: {INSTALLED_ROOTS_REGKEY_PATH}"))?;
 
     // Get the Windows SDK root path
     let kits_root_10_path: String = installed_roots_key
         .get_value(KITS_ROOT_REGVALUE_NAME)
-        .with_context(|| format!("Error getting {} value from registry!", KITS_ROOT_REGVALUE_NAME))?;
+        .with_context(|| format!("Error getting {KITS_ROOT_REGVALUE_NAME} value from registry!"))?;
 
     // Construct Windows SDK bin path
     let kits_root_10_bin_path = Path::new(&kits_root_10_path).join("bin");
@@ -80,7 +80,7 @@ fn locate_signtool() -> Result<PathBuf> {
         .filter_map(|res| match res {
             Ok(v) => Some(v),
             Err(err) => {
-                println!("[!] Error enumerating installed root keys: {}", err);
+                println!("[!] Error enumerating installed root keys: {err}");
                 None
             }
         })

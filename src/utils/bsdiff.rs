@@ -59,7 +59,7 @@ pub fn apply_patch(old: &Path, new: &Path, patch: &Path) -> Result<FileInfo> {
     patch_data.read_exact(&mut size_buf)?;
     let size = offtin(size_buf);
     if size < 0 {
-        panic!("Patch output file size < 0! {}", size)
+        panic!("Patch output file size < 0! {size}")
     }
     // Create LZMA reader
     let mut reader = XzDecoder::new(&mut patch_data);

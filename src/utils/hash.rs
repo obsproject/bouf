@@ -64,7 +64,7 @@ pub fn hash_file(path: &Path) -> FileInfo {
 
     let mut s = String::with_capacity(2 * BLAKE2_HASH_SIZE);
     for byte in buf {
-        write!(s, "{:02x}", byte).unwrap();
+        write!(s, "{byte:02x}").unwrap();
     }
 
     create_file_info(s, &file)
@@ -101,7 +101,7 @@ pub fn get_dir_hashes(path: &PathBuf, cache: Option<HashMap<String, FileInfo>>) 
         return hashes;
     }
 
-    println!(" => Hashing {} files.", num);
+    println!(" => Hashing {num} files.");
     let style = ProgressStyle::with_template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}").unwrap();
     let pbar = ProgressBar::new(num)
         .with_style(style)
