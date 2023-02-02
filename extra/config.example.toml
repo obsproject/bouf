@@ -36,7 +36,8 @@ excludes = [
 #     ["data/obs-plugins/win-capture/graphics-hook32.pdb", "C:/path/to/override/graphics-hook32.pdb"],
 # ]
 
-# NOTE: The following two options are mutually exclusive, and should be specified via the command line switches instead
+# NOTE: The following two options are mutually exclusive
+# NOTE 2: The following two options only apply to binaries (.pdb, .exe, .dll, .pyd)
 # Files matching these will be copied from the latest previous build instead
 # exclude = ["win-capture"]
 # Files not matching these will be copied from the latest previous build instead

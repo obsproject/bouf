@@ -14,6 +14,9 @@ use crate::models::config::{Config, CopyOptions, ObsVersion};
 use crate::utils::misc;
 use crate::utils::misc::parse_version;
 
+const BINARY_EXTS: [&str; 4] = ["exe", "pdb", "pyd", "dll"];
+const ALWAYS_COPIED: [&str; 6] = ["obs64", "obspython", "obslua", "obs-frontend-api", "obs.dll", "obs.pdb"];
+
 pub struct Preparator<'a> {
     config: &'a Config,
     input_path: PathBuf,
@@ -242,25 +245,19 @@ impl<'a> Preparator<'a> {
 }
 
 fn copy_files(opts: &CopyOptions, input: &PathBuf, output: &Path, copying_old: bool) -> Result<()> {
-    // Include filter needs to be inverted when copying old files
+    // Include/exclude filter needs to be inverted when copying old files
     let includes = if !copying_old { &opts.include } else { &opts.exclude };
+    let excludes = if !copying_old { &opts.exclude } else { &opts.include };
 
-    // Concatenate all exclude filters
-    let mut excludes: HashSet<&String> = HashSet::new();
-    // Config excludes
-    excludes.extend(opts.excludes.iter());
-    // Simple filters, again inverted for old build copy
-    if !copying_old {
-        excludes.extend(opts.exclude.iter());
-    } else {
-        excludes.extend(opts.include.iter());
-    }
+    // Non-negotiable excludes
+    let mut always_exclude: HashSet<&String> = HashSet::new();
+    always_exclude.extend(opts.excludes.iter());
     // Overrides are also excludes
     opts.overrides.iter().for_each(|(obs_path, _)| {
-        excludes.insert(obs_path);
+        always_exclude.insert(obs_path);
     });
     opts.overrides_sign.iter().for_each(|(obs_path, _)| {
-        excludes.insert(obs_path);
+        always_exclude.insert(obs_path);
     });
 
     std::fs::create_dir_all(output)?;
@@ -282,10 +279,23 @@ fn copy_files(opts: &CopyOptions, input: &PathBuf, output: &Path, copying_old: b
         {
             continue;
         }
-        if !includes.is_empty() && !includes.iter().any(|f| relative_path_str.contains(f)) {
+
+        if always_exclude.iter().any(|f| relative_path_str.contains(*f)) {
             continue;
         }
-        if excludes.iter().any(|f| relative_path_str.contains(*f)) {
+
+        let is_binary = BINARY_EXTS.iter().any(|e| relative_path_str.ends_with(e));
+        let always_copied = ALWAYS_COPIED.iter().any(|e| relative_path_str.contains(e));
+        // Include/Exclude filters only apply to binaries except ones that are always copied
+        if is_binary && !always_copied {
+            if !includes.is_empty() && !includes.iter().any(|f| relative_path_str.contains(f)) {
+                continue;
+            }
+            if !excludes.is_empty() && excludes.iter().any(|f| relative_path_str.contains(f)) {
+                continue;
+            }
+        } else if always_copied && copying_old {
+            // Do not copy always copied files when copying old files
             continue;
         }
 
