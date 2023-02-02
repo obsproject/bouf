@@ -30,7 +30,7 @@ serde_json = "1.0.83"
 clap = { version = "4.1", features = ["derive", "wrap_help"] }
 toml = "0.7.0"
 # delta patching
-bsdiff = { git = "https://github.com/jp9000/bsdiff-rs", branch = "tail-end-optimization" }
+bsdiff = { git = "https://github.com/space-wizards/bsdiff-rs", rev = "a77199a6dd31d90555b4efd2c57d91d3aa3b69e5" }
 xz2 = "0.1.7"
 zstd = "0.12.2"
 # singing
