@@ -24,32 +24,30 @@ Additionally, the following utilities are provided:
 ## Usage:
 
 ```
-bouf 0.3.2
+Usage: bouf.exe [OPTIONS] --config <config.toml> --version <Major.Minor.Patch[-(rc|beta)Num]>
 
-USAGE:
-    bouf.exe [OPTIONS] --config <Config file> --version <Major.Minor.Patch[-(rc|beta)Num]>
-
-OPTIONS:
-        --beta <Beta number>                            Beta number
-        --branch <Beta branch>                          Branch used in manifest name/update files
-    -c, --config <Config file>
-        --clear-output                                  Clear existing output directory
-        --commit <commit hash>                          Commit hash used in manifest
-        --exclude <FILTER>
-    -h, --help                                          Print help information
-    -i, --input <new build>
-        --include <FILTER>
-        --note-file <file.rtf>                          File containing release notes
-    -o, --output <output dir>
-    -p, --previous <old builds>
-        --private-key <file.pem>                        Falls back to "UPDATER_PRIVATE_KEY" env var
-        --rc <RC number>                                RC number
-        --skip-codesigning                              Skip codesigning
-        --skip-installer                                Skip creating NSIS installer
-        --skip-manifest-signing                         Skip signing manifest
-        --skip-patches                                  Skip creating delta patches
-        --updater-data-only                             Create only delta patches and manifest
-    -v, --version <Major.Minor.Patch[-(rc|beta)Num]>    OBS main version
+Options:
+  -c, --config <config.toml>                        Configuration file
+  -v, --version <Major.Minor.Patch[-(rc|beta)Num]>  OBS main version
+      --beta <Beta number>                          Beta number
+      --rc <RC number>                              RC number
+      --branch <Beta branch>                        Branch used in manifest name/update files
+      --commit <commit hash>                        Commit hash used in manifest
+  -i, --input <new build>
+  -p, --previous <old builds>
+  -o, --output <output dir>
+      --notes-file <file.rtf>                       File containing release notes
+      --private-key <file.pem>                      Falls back to "UPDATER_PRIVATE_KEY" env var
+      --include <FILTER>
+      --exclude <FILTER>
+      --updater-data-only                           Create only delta patches and manifest
+      --skip-installer                              Skip creating NSIS installer
+      --skip-patches                                Skip creating delta patches
+      --skip-codesigning                            Skip codesigning
+      --skip-manifest-signing                       Skip signing manifest
+      --clear-output                                Clear existing output directory
+  -h, --help                                        Print help (see more with '--help')
+  -V, --version                                     Print version
 ```
 
 
@@ -73,3 +71,4 @@ and may not be redistributed under the Apache-2 terms.
 - Figure out how to deal with nightlies
   + Disable copy to previous directory?
   + No deltas to avoid problems?
+- Make zstd level configurable
