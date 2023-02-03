@@ -15,7 +15,6 @@ use crate::utils::misc;
 use crate::utils::misc::parse_version;
 
 const BINARY_EXTS: [&str; 4] = ["exe", "pdb", "pyd", "dll"];
-const ALWAYS_COPIED: [&str; 6] = ["obs64", "obspython", "obslua", "obs-frontend-api", "obs.dll", "obs.pdb"];
 
 pub struct Preparator<'a> {
     config: &'a Config,
@@ -285,7 +284,7 @@ fn copy_files(opts: &CopyOptions, input: &PathBuf, output: &Path, copying_old: b
         }
 
         let is_binary = BINARY_EXTS.iter().any(|e| relative_path_str.ends_with(e));
-        let always_copied = ALWAYS_COPIED.iter().any(|e| relative_path_str.contains(e));
+        let always_copied = opts.always_copy.iter().any(|e| relative_path_str.contains(e));
         // Include/Exclude filters only apply to binaries except ones that are always copied
         if is_binary && !always_copied {
             if !includes.is_empty() && !includes.iter().any(|f| relative_path_str.contains(f)) {

@@ -24,6 +24,16 @@ never_copy = [
     "obs-plugins/32bit",
 ]
 
+# Files matching these will be copied regardless of include/exclude filters
+always_copy = [
+    "obs64",
+    "obspython",
+    "obslua",
+    "obs-frontend-api",
+    "obs.dll",
+    "obs.pdb"
+]
+
 # Overrides/adds files during copy step. These files will NOT be signed or stripped
 # overrides = [
 #     ["data/obs-plugins/win-capture/graphics-hook64.dll", "C:/path/to/override/graphics-hook64.dll"],

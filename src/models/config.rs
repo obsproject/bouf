@@ -18,6 +18,16 @@ fn get_default_branch() -> String {
 fn get_compression_default() -> bool {
     false
 }
+fn get_always_copied() -> Vec<String> {
+    vec![
+        "obs64".to_string(),
+        "obspython".to_string(),
+        "obslua".to_string(),
+        "obs-frontend-api".to_string(),
+        "obs.dll".to_string(),
+        "obs.pdb".to_string(),
+    ]
+}
 
 #[derive(Deserialize, Default)]
 #[serde(default)]
@@ -71,6 +81,8 @@ pub struct PreparationOptions {
 pub struct CopyOptions {
     pub excludes: Vec<String>,
     pub never_copy: Vec<String>,
+    #[serde(default = "get_always_copied")]
+    pub always_copy: Vec<String>,
     pub overrides: Vec<(String, String)>,
     pub overrides_sign: Vec<(String, String)>,
     pub include: HashSet<String>,
