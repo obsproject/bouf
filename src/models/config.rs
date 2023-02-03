@@ -316,6 +316,23 @@ impl Config {
             } else if !has_subdirectory(self.env.previous_dir.join("builds"))? {
                 bail!("Previous Builds dir has no items, but --exclude or --include used!")
             }
+
+            let filter_list = if self.prepare.copy.exclude.is_empty() {
+                &self.prepare.copy.include
+            } else {
+                &self.prepare.copy.exclude
+            };
+            let include = !self.prepare.copy.include.is_empty();
+
+            // Apply include/exclude filters to overrides
+            self.prepare
+                .copy
+                .overrides
+                .retain(|(obs_path, _)| include == filter_list.iter().any(|f| obs_path.contains(f)));
+            self.prepare
+                .copy
+                .overrides_sign
+                .retain(|(obs_path, _)| include == filter_list.iter().any(|f| obs_path.contains(f)));
         }
 
         if !self.prepare.copy.excludes.is_empty() {
