@@ -69,7 +69,8 @@ pub struct PreparationOptions {
 #[derive(Deserialize, Default)]
 #[serde(default)]
 pub struct CopyOptions {
-    pub excludes: HashSet<String>,
+    pub excludes: Vec<String>,
+    pub never_copy: Vec<String>,
     pub overrides: Vec<(String, String)>,
     pub overrides_sign: Vec<(String, String)>,
     pub include: HashSet<String>,
@@ -303,6 +304,11 @@ impl Config {
             } else if !has_subdirectory(self.env.previous_dir.join("builds"))? {
                 bail!("Previous Builds dir has no items, but --exclude or --include used!")
             }
+        }
+
+        if !self.prepare.copy.excludes.is_empty() {
+            println!("Notice: \"excludes\" is deprecated in favour of \"never_copy\"");
+            self.prepare.copy.never_copy.append(&mut self.prepare.copy.excludes);
         }
 
         // Check that notes and vc redist files exists

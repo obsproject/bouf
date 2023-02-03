@@ -251,7 +251,7 @@ fn copy_files(opts: &CopyOptions, input: &PathBuf, output: &Path, copying_old: b
 
     // Non-negotiable excludes
     let mut always_exclude: HashSet<&String> = HashSet::new();
-    always_exclude.extend(opts.excludes.iter());
+    always_exclude.extend(opts.never_copy.iter());
     // Overrides are also excludes
     opts.overrides.iter().for_each(|(obs_path, _)| {
         always_exclude.insert(obs_path);

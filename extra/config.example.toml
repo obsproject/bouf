@@ -19,7 +19,7 @@ empty_output_dir = false
 [prepare.copy]
 
 # These files will *never* be copied
-excludes = [
+never_copy = [
     "bin/32bit",
     "obs-plugins/32bit",
 ]
