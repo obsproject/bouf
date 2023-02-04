@@ -126,12 +126,16 @@ impl<'a> Packaging<'a> {
         };
 
         let manifest_path = self.config.env.output_dir.join(manifest_filename);
+        let notes_path = self.config.env.output_dir.join("notes.rst");
 
         // Add VC hash
         let hash = hash_file(&self.config.package.updater.vc_redist_path);
         manifest.vc2019_redist_x64 = hash.hash;
-        // Add notes
+
+        // Add notes and copy them to output
         manifest.notes = run_pandoc(&self.config.package.updater.notes_file, &self.config.env)?;
+        std::fs::copy(&self.config.package.updater.notes_file, notes_path)?;
+
         manifest.to_file(&manifest_path, self.config.package.updater.pretty_json)?;
 
         Ok(manifest_path)
