@@ -73,7 +73,7 @@ skip_for_prerelease = true
 ## Delta patch generation
 [generate]
 # Delta patch type, supported are "bsdiff_lzma" and "zstd"
-patch_type = "bsdiff_lzma"
+patch_type = "zstd"
 # Whether or not to compress non-patch files
 compress_files = true
 # eclude files matching these patterns from being removed automatically

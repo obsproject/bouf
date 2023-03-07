@@ -16,7 +16,7 @@ fn get_default_branch() -> String {
     String::from("stable")
 }
 fn get_compression_default() -> bool {
-    false
+    true
 }
 fn get_always_copied() -> Vec<String> {
     vec![
@@ -380,8 +380,8 @@ fn has_subdirectory(input: PathBuf) -> Result<bool> {
 
 #[derive(Debug, PartialEq, Eq, Default, Deserialize)]
 pub enum PatchType {
-    #[default]
     BsdiffLzma,
+    #[default]
     Zstd,
 }
 
