@@ -28,20 +28,27 @@ jobs:
           mkdir test\new
           mkdir test\out
           mkdir test\old\builds
+          mkdir test\old\pdbs
           Invoke-WebRequest -Uri "https://github.com/obsproject/obs-studio/releases/download/27.2.4/OBS-Studio-27.2.4-Full-x64.zip" -OutFile "oldest.zip"
           Invoke-WebRequest -Uri "https://github.com/obsproject/obs-studio/releases/download/28.0.3/OBS-Studio-28.0.3-Full-x64.zip" -OutFile "older.zip"
-          Invoke-WebRequest -Uri "https://github.com/obsproject/obs-studio/releases/download/28.1.1/OBS-Studio-28.1.1-Full-x64.zip" -OutFile "old.zip"
-          Invoke-WebRequest -Uri "https://github.com/obsproject/obs-studio/releases/download/28.1.2/OBS-Studio-28.1.2-Full-x64.zip" -OutFile "new.zip"
-          7z x new.zip -o"test/new"
-          7z x old.zip -o"test/old/builds/28.1.1"
+          Invoke-WebRequest -Uri "https://github.com/obsproject/obs-studio/releases/download/28.1.2/OBS-Studio-28.1.2-Full-x64.zip" -OutFile "old.zip"
+          Invoke-WebRequest -Uri "https://github.com/obsproject/obs-studio/releases/download/29.0.2/OBS-Studio-29.0.2-Full-x64.zip" -OutFile "new.zip"
+          Invoke-WebRequest -Uri "https://github.com/obsproject/obs-studio/releases/download/29.1.0-beta4/OBS-Studio-29.1-beta4.zip" -OutFile "newer.zip"
+          7z x newer.zip -o"test/new"
+          7z x new.zip -o"test/old/builds/29.0.2"
+          7z.exe x new.zip -o"test/old/pdbs/29.0.2" -ir!"*.pdb"
+          7z x old.zip -o"test/old/builds/28.1.2"
+          7z.exe x old.zip -o"test/old/pdbs/28.1.2" -ir!"*.pdb"
           7z x older.zip -o"test/old/builds/28.0.3"
+          7z.exe x older.zip -o"test/old/pdbs/28.0.3" -ir!"*.pdb"
           7z x oldest.zip -o"test/old/builds/27.2.4"
+          7z.exe x oldest.zip -o"test/old/pdbs/27.2.4" -ir!"*.pdb"
 
       - name: Build (Release)
         run: cargo build -r
 
       - name: Run bouf
-        run: target/release/bouf --config extra/ci/config.toml --version 28.1.2 -i test/new -p test/old -o test/out --clear-output
+        run: target/release/bouf --config extra/ci/config.toml --version 29.1.0-beta4 -i test/new -p test/old -o test/out --clear-output
 
       - name: Upload results
         uses: actions/upload-artifact@v3
