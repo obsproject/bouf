@@ -264,9 +264,11 @@ impl<'a> Preparator<'a> {
 
             let old_info = old_hashes.get(&path).unwrap();
             if old_info.hash == file_info.hash {
-                // println!("File {path} has identical code hash!");
-                let (p, _) = path.rsplit_once('.').unwrap();
-                self.exclude.insert(p.to_string());
+                // Add filename minus extension to the list so PDBs are also copied from the old
+                // version. The trailing "." is included to avoid potential conflicts with files
+                // that share the same prefix but.
+                let (base, _ext) = path.rsplit_once('.').unwrap();
+                self.exclude.insert(format!("{base}."));
             }
         }
 
@@ -338,11 +340,11 @@ fn copy_files(
         // Include/Exclude filters only apply to binaries except ones that are always copied
         if is_binary && !always_copied {
             // Exclude filtered files when copying new build
-            if !copying_old && !filter.is_empty() && filter.iter().any(|f| relative_path_str.contains(f)) {
+            if !copying_old && !filter.is_empty() && filter.iter().any(|f| relative_path_str.starts_with(f)) {
                 continue;
             }
             // Include filtered files when copying old build
-            if copying_old && !filter.is_empty() && !filter.iter().any(|f| relative_path_str.contains(f)) {
+            if copying_old && !filter.is_empty() && !filter.iter().any(|f| relative_path_str.starts_with(f)) {
                 continue;
             }
         } else if copying_old {
