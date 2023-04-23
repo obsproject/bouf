@@ -4,7 +4,6 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use anyhow::{bail, Result};
-use hashbrown::HashSet;
 use serde::{Deserialize, Deserializer};
 use toml;
 
@@ -85,8 +84,6 @@ pub struct CopyOptions {
     pub always_copy: Vec<String>,
     pub overrides: Vec<(String, String)>,
     pub overrides_sign: Vec<(String, String)>,
-    pub include: HashSet<String>,
-    pub exclude: HashSet<String>,
 }
 
 #[derive(Deserialize, Default)]
@@ -237,18 +234,6 @@ impl Config {
             self.package.updater.notes_file = fs::canonicalize(notes_file)?;
         }
 
-        if let Some(include) = &args.include {
-            for filter in include {
-                self.prepare.copy.include.insert(filter.to_owned());
-            }
-            self.prepare.copy.exclude.clear();
-        } else if let Some(exclude) = &args.exclude {
-            for filter in exclude {
-                self.prepare.copy.exclude.insert(filter.to_owned());
-            }
-            self.prepare.copy.include.clear();
-        }
-
         self.validate(false)
     }
 
@@ -305,39 +290,18 @@ impl Config {
         }
 
         // ToDo Check other files (nsis script, updater)
-        if !self.prepare.copy.include.is_empty() || !self.prepare.copy.exclude.is_empty() {
-            // Having both sets of filters could lead to unexpected behaviour
-            if !self.prepare.copy.include.is_empty() && !self.prepare.copy.exclude.is_empty() {
-                bail!("Filter lists \"include\" or \"exclude\" cannot be used at the same time!")
-            }
-            // Ensure that at least one older version exists when exclude/include is used
-            if !has_subdirectory(self.env.previous_dir.join("pdbs"))? {
-                bail!("Previous PDBs dir has no items, but --exclude or --include used!")
-            } else if !has_subdirectory(self.env.previous_dir.join("builds"))? {
-                bail!("Previous Builds dir has no items, but --exclude or --include used!")
-            }
-
-            let filter_list = if self.prepare.copy.exclude.is_empty() {
-                &self.prepare.copy.include
-            } else {
-                &self.prepare.copy.exclude
-            };
-            let include = !self.prepare.copy.include.is_empty();
-
-            // Apply include/exclude filters to overrides
-            self.prepare
-                .copy
-                .overrides
-                .retain(|(obs_path, _)| include == filter_list.iter().any(|f| obs_path.contains(f)));
-            self.prepare
-                .copy
-                .overrides_sign
-                .retain(|(obs_path, _)| include == filter_list.iter().any(|f| obs_path.contains(f)));
-        }
 
         if !self.prepare.copy.excludes.is_empty() {
             println!("Notice: \"excludes\" is deprecated in favour of \"never_copy\"");
             self.prepare.copy.never_copy.append(&mut self.prepare.copy.excludes);
+        }
+
+        if !self.prepare.copy.overrides_sign.is_empty() {
+            println!("Notice: \"overrides_sign\" is deprecated in favour of \"overrides\"");
+            self.prepare
+                .copy
+                .overrides
+                .append(&mut self.prepare.copy.overrides_sign);
         }
 
         // Check that notes and vc redist files exists
