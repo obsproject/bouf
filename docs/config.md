@@ -85,13 +85,15 @@ e.g. when the files are from version that are no longer included in the `previou
 
 ### `[package.installer]` Subsection
 
-- `nsis_script` (path) - Path to NSIS script (**required**)
+- `skip` (bool) - Whether to skip creating the installer (default: `false`)
 - `skip_sign` (bool) - Whether to skip signing the installer (default: `false`)
+- `nsis_script` (path) - Path to NSIS script (**required** if `skip` is `false`)
 
 ### `[package.updater]` Subsection
 
 - `notes_file` (path) - Path to file containing release notes (RST format) (**required** if not set via command line instead)
 - `vc_redist_path` (path) - VC++ redist file which's hash shall be included in the manifest (**required**)
+- `pretty_json` (bool) - Whether to pretty-print JSON manifest (default: `false`)
 
 *Signing options:*
 - `skip_sign` (bool) - Whether to skip signing the manifest (default: `false`)
@@ -101,8 +103,8 @@ e.g. when the files are from version that are no longer included in the `previou
 
 ### `[package.zip]` Subsection
 
-- `name` (string) - Name of ZIP file containing the OBS release build (**required**)
-- `pdb_name` (string) - Name of ZIP file containing unstripped PDBs for this release build (**required**)
+- `name` (string) - Name of ZIP file containing the OBS release build (defaults: `OBS-Studio-{version}.zip`)
+- `pdb_name` (string) - Name of ZIP file containing unstripped PDBs for this release build (default: `OBS-Studio-{version}-pdbs.zip`)
 
 **Note:** Both support the `{version}` placeholder to be replaced with the OBS version.
 

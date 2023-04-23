@@ -1,6 +1,7 @@
-[env]
 # Branch can be set via command line as well, empty will genreate backwards-compatible update structure
-branch = ""
+branch = "stable"
+
+[env]
 # Directories for building (can be overriden via command line)
 input_dir = "C:/Path/to/build"
 output_dir = "C:/Path/to/output"
@@ -124,8 +125,6 @@ skip_sign = false
 # Note: {version} will be <Major>.<Minor>[.<Patch>] and suffixied with "-rc<Num>" or "-beta<Num>" if provided
 name = "OBS-Studio-{version}.zip"
 pdb_name = "OBS-Studio-{version}-pdbs.zip"
-# Skip PDB generation for pre-release
-skip_pdbs_for_prerelease = true
 
 [package.updater]
 skip_sign = true
@@ -135,6 +134,8 @@ private_key = "C:/Path/to/privkey.pem"
 vc_redist_path = "C:/path/to/vcredist"
 # File containing release notes, should be a pandoc compatible format (e.g. RST or Markdown)
 notes_file = "C:/path/to/release_notes.rst"
+# Pretty print JSON manifest
+pretty_json = true
 
 [post]
 # move processed input directory to "previous" folder after packaging is done

@@ -250,7 +250,7 @@ impl<'a> Generator<'a> {
             .with_finish(ProgressFinish::AndLeave);
 
         let comp_map = Arc::new(Mutex::new(&mut analysis.compressed_map));
-        let branch = &self.config.env.branch;
+        let branch = &self.config.branch;
         println!("[+] Copying/Compressing new build to updater structure...");
         analysis
             .input_map
@@ -311,7 +311,7 @@ impl<'a> Generator<'a> {
             })
             .collect();
 
-        let branch = &self.config.env.branch;
+        let branch = &self.config.branch;
         let num = patch_list_mt.len() as u64;
 
         let style =

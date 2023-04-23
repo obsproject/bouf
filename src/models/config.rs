@@ -14,6 +14,18 @@ use crate::utils::sign::Signer;
 fn get_default_branch() -> String {
     String::from("stable")
 }
+fn get_7z_bin() -> PathBuf {
+    PathBuf::from("7z")
+}
+fn get_makensis_bin() -> PathBuf {
+    PathBuf::from("makensis")
+}
+fn get_pandoc_bin() -> PathBuf {
+    PathBuf::from("pandoc")
+}
+fn get_pdbcopy_bin() -> PathBuf {
+    PathBuf::from("pdbcopy")
+}
 fn get_compression_default() -> bool {
     true
 }
@@ -27,10 +39,22 @@ fn get_always_copied() -> Vec<String> {
         "obs.pdb".to_string(),
     ]
 }
+fn get_signed_exts() -> Vec<String> {
+    vec!["exe".to_string(), "dll".to_string(), "pyd".to_string()]
+}
+fn get_default_zip_name() -> String {
+    String::from("OBS-Studio-{version}.zip")
+}
+fn get_default_pdb_zip_name() -> String {
+    String::from("OBS-Studio-{version}-pdbs.zip")
+}
 
 #[derive(Deserialize, Default)]
 #[serde(default)]
 pub struct Config {
+    #[serde(default = "get_default_branch")]
+    pub branch: String,
+    // Sections
     pub env: EnvOptions,
     pub prepare: PreparationOptions,
     pub generate: GenerationOptions,
@@ -54,15 +78,17 @@ pub struct ObsVersion {
 #[derive(Deserialize, Default)]
 #[serde(default)]
 pub struct EnvOptions {
-    #[serde(default = "get_default_branch")]
-    pub branch: String,
     pub input_dir: PathBuf,
     pub output_dir: PathBuf,
     pub previous_dir: PathBuf,
     // Tool paths
+    #[serde(default = "get_7z_bin")]
     pub sevenzip_path: PathBuf,
+    #[serde(default = "get_makensis_bin")]
     pub makensis_path: PathBuf,
+    #[serde(default = "get_pandoc_bin")]
     pub pandoc_path: PathBuf,
+    #[serde(default = "get_pdbcopy_bin")]
     pub pdbcopy_path: PathBuf,
 }
 
@@ -93,6 +119,7 @@ pub struct CodesignOptions {
     pub sign_name: String,
     pub sign_digest: String,
     pub sign_ts_serv: String,
+    #[serde(default = "get_signed_exts")]
     pub sign_exts: Vec<String>,
 }
 
@@ -138,14 +165,16 @@ pub struct InstallerOptions {
     pub nsis_script: PathBuf,
     pub name: String,
     pub skip_sign: bool,
+    pub skip: bool,
 }
 
 #[derive(Deserialize, Default)]
 #[serde(default)]
 pub struct ZipOptions {
+    #[serde(default = "get_default_zip_name")]
     pub name: String,
+    #[serde(default = "get_default_pdb_zip_name")]
     pub pdb_name: String,
-    pub skip_pdbs_for_prerelease: bool,
 }
 
 #[derive(Deserialize, Default)]
@@ -216,7 +245,7 @@ impl Config {
             self.env.previous_dir = previous.clone();
         }
         if let Some(branch) = &args.branch {
-            self.env.branch = branch.to_owned();
+            self.branch = branch.to_owned();
         }
         if let Some(commit) = &args.commit {
             self.obs_version.commit = commit.replace('g', "");
@@ -225,6 +254,7 @@ impl Config {
         self.prepare.empty_output_dir = args.clear_output;
         self.prepare.codesign.skip_sign = args.skip_codesigning || self.prepare.codesign.skip_sign;
         self.package.installer.skip_sign = args.skip_codesigning || self.package.installer.skip_sign;
+        self.package.installer.skip = args.skip_installer || self.package.installer.skip;
         self.package.updater.skip_sign = args.skip_manifest_signing || self.package.updater.skip_sign;
 
         if let Some(privkey) = &args.private_key {
@@ -257,13 +287,12 @@ impl Config {
         // This function will just return the original path if it doesn't succeed.
         self.env.output_dir = misc::recursive_canonicalize(&self.env.output_dir);
 
-        // Check that config defines at least one package
-        if self.generate.packages.is_empty() {
-            bail!("No packages defined in config!");
-        }
-        // Check if a manifest package is defined that does not have any filters
-        if !self.generate.packages.iter().any(|f| f.include_files.is_none()) {
-            bail!("No catchall package exists in conifg!");
+        // Create default package if none exist
+        if self.generate.packages.is_empty() || !self.generate.packages.iter().any(|f| f.include_files.is_none()) {
+            self.generate.packages.push(ManifestPackageOptions {
+                name: "core".to_string(),
+                ..Default::default()
+            });
         }
 
         // This is all we care about if we're only generating deltas
@@ -285,11 +314,15 @@ impl Config {
         }
 
         // Check if codesigning parameters are set (if enabled)
-        if !self.prepare.codesign.skip_sign {
-            // ToDo
+        #[cfg(windows)]
+        if !self.prepare.codesign.skip_sign
+            && (self.prepare.codesign.sign_name.is_empty()
+                || self.prepare.codesign.sign_digest.is_empty()
+                || self.prepare.codesign.sign_ts_serv.is_empty()
+                || self.prepare.codesign.sign_exts.is_empty())
+        {
+            bail!("Codesigning settings are incomplete!")
         }
-
-        // ToDo Check other files (nsis script, updater)
 
         if !self.prepare.copy.excludes.is_empty() {
             println!("Notice: \"excludes\" is deprecated in favour of \"never_copy\"");
@@ -302,6 +335,11 @@ impl Config {
                 .copy
                 .overrides
                 .append(&mut self.prepare.copy.overrides_sign);
+        }
+
+        // Check that NSIS script exists if installer not skipped
+        if !self.package.installer.skip && !self.package.installer.nsis_script.exists() {
+            bail!("NSIS script does not exist!")
         }
 
         // Check that notes and vc redist files exists
@@ -328,18 +366,6 @@ impl Config {
 
         Ok(config)
     }
-}
-
-fn has_subdirectory(input: PathBuf) -> Result<bool> {
-    for item in fs::read_dir(input)?.flatten() {
-        if let Ok(meta) = item.metadata() {
-            if meta.is_dir() {
-                return Ok(true);
-            }
-        }
-    }
-
-    Ok(false)
 }
 
 #[derive(Debug, PartialEq, Eq, Default, Deserialize)]

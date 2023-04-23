@@ -106,18 +106,13 @@ impl<'a> Packaging<'a> {
         let pdb_zip_path = self.config.env.output_dir.join(pdb_zip_name);
 
         run_sevenzip(&self.config.env.sevenzip_path, &obs_path, &obs_zip_path)?;
-        let is_prerelease = self.config.obs_version.rc > 0
-            || self.config.obs_version.beta > 0
-            || !self.config.obs_version.commit.is_empty();
-        if !(self.config.package.zip.skip_pdbs_for_prerelease && is_prerelease) {
-            run_sevenzip(&self.config.env.sevenzip_path, &pdb_path, &pdb_zip_path)?;
-        }
+        run_sevenzip(&self.config.env.sevenzip_path, &pdb_path, &pdb_zip_path)?;
 
         Ok(())
     }
 
     pub fn finalise_manifest(&self, manifest: &mut Manifest) -> Result<PathBuf> {
-        let branch = &self.config.env.branch;
+        let branch = &self.config.branch;
 
         let manifest_filename = if branch.is_empty() || branch == "stable" {
             "manifest.json".to_string()
