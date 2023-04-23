@@ -34,24 +34,11 @@ always_copy = [
     "obs.pdb"
 ]
 
-# Overrides/adds files during copy step. These files will NOT be signed or stripped
-# overrides = [
-#     ["data/obs-plugins/win-capture/graphics-hook64.dll", "C:/path/to/override/graphics-hook64.dll"],
-#     ["data/obs-plugins/win-capture/graphics-hook64.pdb", "C:/path/to/override/graphics-hook64.pdb"],
-# ]
-
 # Overrides/adds files during copy step. These files WILL be signed and stripped
-# overrides_sign = [
-#     ["data/obs-plugins/win-capture/graphics-hook32.dll", "C:/path/to/override/graphics-hook32.dll"],
-#     ["data/obs-plugins/win-capture/graphics-hook32.pdb", "C:/path/to/override/graphics-hook32.pdb"],
-# ]
-
-# NOTE: The following two options are mutually exclusive
-# NOTE 2: The following two options only apply to binaries (.pdb, .exe, .dll, .pyd)
-# Files matching these will be copied from the latest previous build instead
-# exclude = ["win-capture"]
-# Files not matching these will be copied from the latest previous build instead
-# include = ["win-dshow"]
+overrides = [
+    ["data/obs-plugins/win-capture/graphics-hook32.dll", "C:/path/to/override/graphics-hook32.dll"],
+    ["data/obs-plugins/win-capture/graphics-hook32.pdb", "C:/path/to/override/graphics-hook32.pdb"],
+]
 
 [prepare.codesign]
 skip_sign = false
@@ -93,9 +80,6 @@ removed_files = [
     "obs-plugins/64bit/decklink-ouput-ui.dll"
 ]
 
-# not implemented yet
-# skip_for_prerelease = true
-
 # Packages are processed in the specified order.
 # A package without include filters will be assigned any remaining files
 [[generate.packages]]
@@ -134,8 +118,6 @@ name = "core"
 
 [package.installer]
 nsis_script = "C:/Path/to/installer.nsi"
-# not implemented yet (requires NSIS script updates)
-# name = "OBS-Studio-{version}.exe"
 skip_sign = false
 
 [package.zip]
@@ -149,8 +131,7 @@ skip_pdbs_for_prerelease = true
 skip_sign = true
 # alternatively, the key may be specified as base64 encoded PEM/DER in an environment variables (UPDATER_PRIVATE_KEY)
 private_key = "C:/Path/to/privkey.pem"
-# not implemented yet (use bouf-sign to sign updater.exe separately if required)
-# updater_path = "C:/Path/to/updater.exe"
+# path to vc redistributables (hash is in manifest)
 vc_redist_path = "C:/path/to/vcredist"
 # File containing release notes, should be a pandoc compatible format (e.g. RST or Markdown)
 notes_file = "C:/path/to/release_notes.rst"
