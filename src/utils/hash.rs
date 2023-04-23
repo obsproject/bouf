@@ -12,12 +12,14 @@ use blake2::digest::{Update, VariableOutput};
 use blake2::Blake2bVar;
 use hashbrown::HashMap;
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressFinish, ProgressStyle};
+use object::{Object, ObjectSection};
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use walkdir::{DirEntry, WalkDir};
 
 const BLAKE2_HASH_SIZE: usize = 20;
 const READ_BUFSIZE: usize = usize::pow(2, 16);
+const BINARY_EXTS: [&str; 3] = ["exe", "pyd", "dll"];
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, Eq)]
 pub struct FileInfo {
@@ -143,6 +145,71 @@ pub fn get_dir_hashes_cache(path: &PathBuf) -> HashMap<String, FileInfo> {
     if file_written.is_none() {
         println!("[!] Cache could not be written")
     }
+
+    hashes
+}
+
+// ToDo make all of this stuff return results
+fn hash_file_code(path: &Path) -> FileInfo {
+    let mut file = File::open(path).expect("Unable to open file");
+    let mut buf = Vec::new();
+    let mut hash_buf = [0u8; 20];
+
+    file.read_to_end(&mut buf).unwrap();
+
+    let obj_file = object::File::parse(&*buf).unwrap();
+    let mut hasher = Blake2bVar::new(BLAKE2_HASH_SIZE).unwrap();
+
+    obj_file.sections().for_each(|s| {
+        hasher.update(s.data().unwrap());
+    });
+
+    hasher.finalize_variable(&mut hash_buf).unwrap();
+
+    let mut s = String::with_capacity(2 * BLAKE2_HASH_SIZE);
+    for byte in hash_buf {
+        write!(s, "{byte:02x}").unwrap();
+    }
+
+    create_file_info(s, &file)
+}
+
+pub fn get_dir_code_hashes(path: &PathBuf) -> HashMap<String, FileInfo> {
+    let mut hashes: HashMap<String, FileInfo> = HashMap::new();
+
+    for file in WalkDir::new(path)
+        .min_depth(2)
+        .into_iter()
+        .filter_map(Result::ok)
+        .filter(|e| !e.file_type().is_dir())
+    {
+        let file: DirEntry = file;
+        // Get a path relative to the input directory
+        let relative_path = file.path().strip_prefix(path).unwrap().to_str().unwrap();
+        // Internally we always use Unix-style paths, so adjust this here
+        let relative_path_str = String::from(relative_path).replace('\\', "/");
+
+        if !BINARY_EXTS.iter().any(|ext| relative_path_str.ends_with(ext)) {
+            continue;
+        }
+
+        hashes.insert(relative_path_str, FileInfo { ..Default::default() });
+    }
+
+    let num = hashes.iter().filter(|(_, v)| v.hash.is_empty()).count() as u64;
+
+    println!(" => Hashing {num} files' code sections...");
+    let style = ProgressStyle::with_template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}").unwrap();
+    let pbar = ProgressBar::new(num)
+        .with_style(style)
+        .with_finish(ProgressFinish::AndLeave);
+    hashes
+        .par_iter_mut()
+        .filter(|(_, v)| v.hash.is_empty())
+        .progress_with(pbar)
+        .for_each(|(f_path, fileinfo)| {
+            *fileinfo = hash_file_code(path.join(Path::new(f_path)).as_path());
+        });
 
     hashes
 }

@@ -11,6 +11,7 @@ use walkdir::{DirEntry, WalkDir};
 use crate::utils::codesign::sign;
 
 use crate::models::config::{Config, CopyOptions, ObsVersion};
+use crate::utils::hash::get_dir_code_hashes;
 use crate::utils::misc;
 use crate::utils::misc::parse_version;
 
@@ -21,15 +22,25 @@ pub struct Preparator<'a> {
     input_path: PathBuf,
     install_path: PathBuf,
     pdbs_path: PathBuf,
+    prev_bin_path: Option<PathBuf>,
+    prev_pdb_path: Option<PathBuf>,
+    exclude: HashSet<String>,
 }
 
 impl<'a> Preparator<'a> {
     pub fn init(conf: &'a Config) -> Self {
+        let input = misc::normalize_path(&conf.env.input_dir);
+        let install = misc::normalize_path(&conf.env.output_dir.join("install"));
+        let pdbs = misc::normalize_path(&conf.env.output_dir.join("pdbs"));
+
         Self {
             config: conf,
-            input_path: misc::normalize_path(&conf.env.input_dir),
-            install_path: misc::normalize_path(&conf.env.output_dir.join("install")),
-            pdbs_path: misc::normalize_path(&conf.env.output_dir.join("pdbs")),
+            input_path: input,
+            install_path: install,
+            pdbs_path: pdbs,
+            prev_bin_path: None,
+            prev_pdb_path: None,
+            exclude: HashSet::new(),
         }
     }
 
@@ -41,10 +52,10 @@ impl<'a> Preparator<'a> {
                 bail!("Output folder not empty!");
             }
             println!("[!] Deleting previous output dir...");
-            std::fs::remove_dir_all(out_dir)?;
+            fs::remove_dir_all(out_dir)?;
         }
 
-        std::fs::create_dir_all(out_dir)?;
+        fs::create_dir_all(out_dir)?;
         Ok(())
     }
 
@@ -58,11 +69,11 @@ impl<'a> Preparator<'a> {
             self.install_path.display()
         );
 
-        copy_files(copy_opts, &self.input_path, &self.install_path, false)?;
+        copy_files(copy_opts, &self.input_path, &self.install_path, false, &self.exclude)?;
 
         // Copy override files over
-        for (ins_path, ovr_path) in [copy_opts.overrides.as_slice(), copy_opts.overrides_sign.as_slice()].concat() {
-            if fs::metadata(&ovr_path).is_err() {
+        for (ins_path, ovr_path) in copy_opts.overrides.as_slice() {
+            if fs::metadata(ovr_path).is_err() {
                 bail!("Override file \"{}\" does not exist!", ovr_path)
             }
 
@@ -77,9 +88,7 @@ impl<'a> Preparator<'a> {
     }
 
     /// Copy excluded files from previous build and PDB directories
-    fn copy_previous(&self) -> Result<()> {
-        let copy_opts = &self.config.prepare.copy;
-
+    fn find_previous(&mut self) -> Result<()> {
         let is_prerelease = self.config.obs_version.rc > 0
             || self.config.obs_version.beta > 0
             || !self.config.obs_version.commit.is_empty();
@@ -114,26 +123,40 @@ impl<'a> Preparator<'a> {
         let pdb_path: PathBuf = self.config.env.previous_dir.join("pdbs").join(&ver_str);
 
         if !build_path.exists() {
-            bail!("Previous build path \"{}\" does not exist!", pdb_path.display());
+            bail!("Previous build path \"{}\" does not exist!", build_path.display());
         } else if !pdb_path.exists() {
             bail!("Previous PDB path \"{}\" does not exist!", pdb_path.display());
         }
 
+        self.prev_pdb_path = Some(pdb_path);
+        self.prev_bin_path = Some(build_path);
+
+        Ok(())
+    }
+
+    fn copy_previous(&self) -> Result<()> {
+        if self.prev_bin_path.is_none() {
+            return Ok(());
+        }
+
+        let prev_bin_path = self.prev_bin_path.as_ref().unwrap();
+        let prev_pdb_path = self.prev_pdb_path.as_ref().unwrap();
+        let copy_opts = &self.config.prepare.copy;
         // Copy binaries
         println!(
             "[+] Copying old build files from \"{}\" to \"{}\"...",
-            build_path.display(),
+            prev_bin_path.display(),
             self.install_path.display()
         );
-        copy_files(copy_opts, &build_path, &self.install_path, true)?;
+        copy_files(copy_opts, prev_bin_path, &self.install_path, true, &self.exclude)?;
 
         // Copy unstripped PDBs
         println!(
             "[+] Copying old PDB files from \"{}\" to \"{}\"...",
-            pdb_path.display(),
+            prev_pdb_path.display(),
             self.pdbs_path.display()
         );
-        copy_files(copy_opts, &pdb_path, &self.pdbs_path, true)?;
+        copy_files(copy_opts, prev_pdb_path, &self.pdbs_path, true, &self.exclude)?;
 
         Ok(())
     }
@@ -195,11 +218,9 @@ impl<'a> Preparator<'a> {
             return Ok(());
         }
 
-        let exts = &self.config.prepare.codesign.sign_exts;
-        let overrides = &self.config.prepare.copy.overrides;
-
         println!("[+] Signing files in \"{}\"", self.install_path.display());
         let mut to_sign: Vec<PathBuf> = Vec::new();
+        let signable_exts = &self.config.prepare.codesign.sign_exts;
 
         for file in WalkDir::new(&self.install_path)
             .into_iter()
@@ -209,12 +230,7 @@ impl<'a> Preparator<'a> {
             let file: DirEntry = file;
             let relative_path = file.path().to_str().unwrap();
 
-            if !exts.iter().any(|x| relative_path.ends_with(x.as_str())) {
-                continue;
-            }
-            // Do not re-sign files that were copied
-            let relative_path_str = String::from(relative_path).replace('\\', "/");
-            if overrides.iter().any(|(p, _)| relative_path_str == *p) {
+            if !signable_exts.iter().any(|x| relative_path.ends_with(x.as_str())) {
                 continue;
             }
             to_sign.push(file.path().canonicalize()?)
@@ -230,24 +246,60 @@ impl<'a> Preparator<'a> {
         Ok(())
     }
 
-    pub fn run(self) -> Result<()> {
+    fn code_analysis(&mut self) -> Result<()> {
+        if self.prev_bin_path.is_none() {
+            return Ok(());
+        }
+
+        // Hash code sections
+        println!("[+] Hashing new and old code sections...");
+        let prev_build_path = self.prev_bin_path.as_ref().unwrap();
+        let in_hashes = get_dir_code_hashes(&self.install_path);
+        let old_hashes = get_dir_code_hashes(prev_build_path);
+
+        for (path, file_info) in in_hashes {
+            if !old_hashes.contains_key(&path) {
+                continue;
+            }
+
+            let old_info = old_hashes.get(&path).unwrap();
+            if old_info.hash == file_info.hash {
+                // println!("File {path} has identical code hash!");
+                let (p, _) = path.rsplit_once('.').unwrap();
+                self.exclude.insert(p.to_string());
+            }
+        }
+
+        println!(
+            "[*] Found {} files to exclude based on code sections.",
+            self.exclude.len()
+        );
+        Ok(())
+    }
+
+    pub fn run(mut self) -> Result<()> {
+        if self.find_previous().is_err() {
+            println!("No previous builds found.")
+        }
+
         self.ensure_output_dir()?;
         self.copy()?;
+        self.code_analysis()?;
         self.codesign()?;
         self.strip_pdbs()?;
-        if !self.config.prepare.copy.include.is_empty() || !self.config.prepare.copy.exclude.is_empty() {
-            self.copy_previous()?;
-        }
+        self.copy_previous()?;
 
         Ok(())
     }
 }
 
-fn copy_files(opts: &CopyOptions, input: &PathBuf, output: &Path, copying_old: bool) -> Result<()> {
-    // Include/exclude filter needs to be inverted when copying old files
-    let includes = if !copying_old { &opts.include } else { &opts.exclude };
-    let excludes = if !copying_old { &opts.exclude } else { &opts.include };
-
+fn copy_files(
+    opts: &CopyOptions,
+    input: &PathBuf,
+    output: &Path,
+    copying_old: bool,
+    filter: &HashSet<String>,
+) -> Result<()> {
     // Non-negotiable excludes
     let mut always_exclude: HashSet<&String> = HashSet::new();
     always_exclude.extend(opts.never_copy.iter());
@@ -255,11 +307,8 @@ fn copy_files(opts: &CopyOptions, input: &PathBuf, output: &Path, copying_old: b
     opts.overrides.iter().for_each(|(obs_path, _)| {
         always_exclude.insert(obs_path);
     });
-    opts.overrides_sign.iter().for_each(|(obs_path, _)| {
-        always_exclude.insert(obs_path);
-    });
 
-    std::fs::create_dir_all(output)?;
+    fs::create_dir_all(output)?;
 
     for file in WalkDir::new(input)
         .into_iter()
@@ -272,6 +321,7 @@ fn copy_files(opts: &CopyOptions, input: &PathBuf, output: &Path, copying_old: b
         let relative_path = file.path().strip_prefix(input).unwrap();
         let relative_path_str = String::from(relative_path.to_str().unwrap()).replace('\\', "/");
 
+        // ToDo figure out if this should be configurable
         if !relative_path.starts_with("bin")
             && !relative_path.starts_with("data")
             && !relative_path.starts_with("obs-plugins")
@@ -287,10 +337,12 @@ fn copy_files(opts: &CopyOptions, input: &PathBuf, output: &Path, copying_old: b
         let always_copied = opts.always_copy.iter().any(|e| relative_path_str.contains(e));
         // Include/Exclude filters only apply to binaries except ones that are always copied
         if is_binary && !always_copied {
-            if !includes.is_empty() && !includes.iter().any(|f| relative_path_str.contains(f)) {
+            // Exclude filtered files when copying new build
+            if !copying_old && !filter.is_empty() && filter.iter().any(|f| relative_path_str.contains(f)) {
                 continue;
             }
-            if !excludes.is_empty() && excludes.iter().any(|f| relative_path_str.contains(f)) {
+            // Include filtered files when copying old build
+            if copying_old && !filter.is_empty() && !filter.iter().any(|f| relative_path_str.contains(f)) {
                 continue;
             }
         } else if copying_old {

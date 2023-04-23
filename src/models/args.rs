@@ -46,12 +46,6 @@ pub struct MainArgs {
     #[arg(long, value_name = "file.pem")]
     pub private_key: Option<PathBuf>,
 
-    // Optional filters
-    #[arg(long, value_name = "FILTER", conflicts_with = "exclude")]
-    pub include: Option<Vec<String>>,
-    #[arg(long, value_name = "FILTER", conflicts_with = "include")]
-    pub exclude: Option<Vec<String>>,
-
     // Optional flags
     /// Create only delta patches and manifest
     #[arg(long, default_value_t = false)]
