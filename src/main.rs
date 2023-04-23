@@ -41,7 +41,7 @@ fn main() -> Result<()> {
 
     let packager = Packaging::init(&conf);
     // Create NSIS/ZIP
-    if !args.skip_installer && !args.updater_data_only {
+    if !conf.package.installer.skip && !args.updater_data_only {
         println!("[+] Creating Installer");
         packager.run_nsis().context("[!] NSIS creation/signing failed")?;
     } else {

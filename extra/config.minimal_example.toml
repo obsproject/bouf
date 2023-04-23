@@ -1,0 +1,20 @@
+[env]
+input_dir = "C:/Path/to/build"
+output_dir = "C:/Path/to/output"
+previous_dir = "C:/path/to/previous/versions"
+
+sevenzip_path = "C:/Program Files/7-Zip/7z.exe"
+makensis_path = "C:/Program Files (x86)/NSIS/makensis.exe"
+pandoc_path = "C:/Dev/obs/obs-patchgenerator-rs/rundir/pandoc.exe"
+pdbcopy_path = "C:/Program Files (x86)/Windows Kits/10/Debuggers/x64/pdbcopy.exe"
+
+[prepare.codesign]
+skip_sign = true
+
+[package.installer]
+skip = true
+
+[package.updater]
+skip_sign = true
+vc_redist_path = "C:/path/to/vcredist"
+notes_file = "C:/path/to/release_notes.rst"
