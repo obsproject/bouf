@@ -4,6 +4,9 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::{anyhow, Result};
+use log::error;
+#[cfg(windows)]
+use log::info;
 
 #[cfg(windows)]
 use crate::utils::codesign::sign;
@@ -51,21 +54,21 @@ impl<'a> Packaging<'a> {
             nsis_script.into_os_string(),
         ];
 
-        println!(" => Running NSIS...");
+        info!(" => Running NSIS...");
         let output = Command::new(&self.config.env.makensis_path).args(args).output()?;
 
         if !output.status.success() {
-            println!("MakeNSIS returned non-success status: {}", output.status);
+            error!("MakeNSIS returned non-success status: {}", output.status);
             std::io::stdout().write_all(&output.stdout)?;
             std::io::stderr().write_all(&output.stderr)?;
 
             Err(anyhow!("MakeNSIS failed (see stdout/stderr for details)"))
         } else {
-            println!("[+] NSIS completed successfully!");
+            info!("NSIS completed successfully!");
 
             if !self.config.package.installer.skip_sign {
                 self.sign_installer()?;
-                println!("[+] Installer signed successfully!");
+                info!("Installer signed successfully!");
             }
 
             Ok(())
@@ -74,7 +77,8 @@ impl<'a> Packaging<'a> {
 
     #[cfg(unix)]
     pub fn run_nsis(&self) -> Result<()> {
-        println!("Creating an installer is not (yet) supported on this platform.");
+        use log::warn;
+        warn!("Creating an installer is not (yet) supported on this platform.");
 
         Ok(())
     }
@@ -84,7 +88,7 @@ impl<'a> Packaging<'a> {
         let filename = format!("OBS-Studio-{}-Full-Installer-x64.exe", self.short_version);
         let path = self.config.env.output_dir.join(filename).canonicalize()?;
 
-        println!("[+] Signing installer file \"{}\"", path.display());
+        info!("Signing installer file \"{}\"", path.display());
         let files: Vec<PathBuf> = vec![path];
         sign(files, &self.config.prepare.codesign)?;
 
@@ -112,7 +116,7 @@ impl<'a> Packaging<'a> {
     }
 
     pub fn finalise_manifest(&self, manifest: &mut Manifest) -> Result<PathBuf> {
-        let branch = &self.config.branch;
+        let branch = &self.config.general.branch;
 
         let manifest_filename = if branch.is_empty() || branch == "stable" {
             "manifest.json".to_string()
@@ -150,7 +154,7 @@ fn run_sevenzip(sevenzip: &PathBuf, in_path: &PathBuf, out_path: &PathBuf) -> Re
     let output = Command::new(sevenzip).args(args).output()?;
 
     if !output.status.success() {
-        println!("7-zip returned non-success status: {}", output.status);
+        error!("7-zip returned non-success status: {}", output.status);
         std::io::stdout().write_all(&output.stdout)?;
         std::io::stderr().write_all(&output.stderr)?;
 
@@ -172,7 +176,7 @@ fn run_pandoc(path: &PathBuf, env: &EnvOptions) -> Result<String> {
     let output = Command::new(&env.pandoc_path).args(args).output()?;
 
     if !output.status.success() {
-        println!("pandoc returned non-success status: {}", output.status);
+        error!("pandoc returned non-success status: {}", output.status);
         std::io::stdout().write_all(&output.stdout)?;
         std::io::stderr().write_all(&output.stderr)?;
         Err(anyhow!("pandoc failed (see stdout/stderr for details)"))

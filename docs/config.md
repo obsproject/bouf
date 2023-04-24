@@ -10,10 +10,14 @@ Keys are optional unless noted otherwise.
 
 The bouf configuration file uses the [TOML](https://toml.io/en/) format.
 
-## `[env]` Section
+## `[general]` Section
 
-todo move this *somewhere*
-- `branch` (string) - updater branch to use in path/manifest (default: `stable`)
+- `branch` (string) - Updater branch to use in path/manifest (default: `stable`)
+- `log_level` (string) - Log level to print (default: `info`)
+
+Valid log levels are `trace`, `debug`, `info`, `warn`, and `error`.
+
+## `[env]` Section
 
 *Locations (**required** to be set in the config **or** command line):*
 - `input_dir` (path) - directory containing new build

@@ -65,4 +65,7 @@ pub struct MainArgs {
     /// Clear existing output directory
     #[arg(long, default_value_t = false)]
     pub clear_output: bool,
+    /// Verbose logging
+    #[arg(long, short = 'd', default_value_t = false)]
+    pub verbose: bool,
 }

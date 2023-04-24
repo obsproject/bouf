@@ -12,6 +12,7 @@ use blake2::digest::{Update, VariableOutput};
 use blake2::Blake2bVar;
 use hashbrown::HashMap;
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressFinish, ProgressStyle};
+use log::{info, warn};
 use object::{Object, ObjectSection};
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
@@ -98,12 +99,12 @@ pub fn get_dir_hashes(path: &PathBuf, cache: Option<HashMap<String, FileInfo>>) 
 
     if num == 0 {
         if cache.is_some() {
-            println!(" => All file hashes loaded from cache.");
+            info!(" => All file hashes loaded from cache.");
         }
         return hashes;
     }
 
-    println!(" => Hashing {num} files.");
+    info!(" => Hashing {num} files.");
     let style = ProgressStyle::with_template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}").unwrap();
     let pbar = ProgressBar::new(num)
         .with_style(style)
@@ -131,7 +132,7 @@ pub fn get_dir_hashes_cache(path: &PathBuf) -> HashMap<String, FileInfo> {
     });
 
     if cache.is_none() {
-        println!("[!] No cache found.");
+        info!("No cache found.");
     }
 
     let hashes = get_dir_hashes(path, cache);
@@ -143,7 +144,7 @@ pub fn get_dir_hashes_cache(path: &PathBuf) -> HashMap<String, FileInfo> {
     });
 
     if file_written.is_none() {
-        println!("[!] Cache could not be written")
+        warn!("Cache could not be written")
     }
 
     hashes
@@ -198,7 +199,7 @@ pub fn get_dir_code_hashes(path: &PathBuf) -> HashMap<String, FileInfo> {
 
     let num = hashes.iter().filter(|(_, v)| v.hash.is_empty()).count() as u64;
 
-    println!(" => Hashing {num} files' code sections...");
+    info!(" => Hashing {num} files' code sections...");
     let style = ProgressStyle::with_template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}").unwrap();
     let pbar = ProgressBar::new(num)
         .with_style(style)

@@ -19,7 +19,6 @@ and may not be redistributed under the Apache-2 terms.
 
 - Go through older code and replace `.expect()`s and `panic!`s with anyhow errors 
   + This will require some larger changes in some codepaths, do this later...
-- Use proper logging with levels and timestamped output
 - Figure out how to deal with nightlies
   + Disable copy to previous directory?
   + No deltas to avoid problems?
