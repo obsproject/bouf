@@ -4,13 +4,15 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use clap::Parser;
+use log::info;
 
 mod models;
 mod steps;
 mod utils;
 
-use crate::models::config::Config;
+use models::config::Config;
 use steps::generate::Generator;
+use utils::logging::init_logger;
 
 #[derive(Parser, Debug)]
 #[command(about, long_about = None)]
@@ -21,12 +23,14 @@ struct Args {
 
 fn main() -> Result<()> {
     let args: Args = Args::parse();
-    println!("[+] Loading config...");
+    info!("Loading config...");
     let mut conf = Config::from_file(&args.config)?;
+    init_logger(conf.general.log_level.as_str());
+
     conf.validate(true)?;
     let mut gen = Generator::init(&conf, false);
-    println!("[+] Running generator...");
-    gen.create_patches().context("[!] Creating delta patches failed!")?;
+    info!("Running generator...");
+    gen.create_patches().context("Creating delta patches failed!")?;
 
     Ok(())
 }

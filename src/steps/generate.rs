@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex};
 use anyhow::Result;
 use hashbrown::{HashMap, HashSet};
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressFinish, ProgressIterator, ProgressStyle};
+use log::{info, warn};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 use crate::models::config::{Config, PatchType};
@@ -103,11 +104,11 @@ impl<'a> Generator<'a> {
         let changed_files_list = get_sorted_list(&analysis.changed_files);
         let unchanged_files_list = get_sorted_list(&analysis.unchanged_files);
 
-        println!("  -     Added : {} (see added.txt)", added_files_list.len());
-        println!("  -   Changed : {} (see changed.txt)", changed_files_list.len());
-        println!("  - Unchanged : {} (see unchanged.txt)", unchanged_files_list.len());
-        println!("  -   Removed : {} (see removed.txt)", removed_files_list.len());
-        println!("  -   Patches : {}", analysis.patch_list.len());
+        info!("  -     Added : {} (see added.txt)", added_files_list.len());
+        info!("  -   Changed : {} (see changed.txt)", changed_files_list.len());
+        info!("  - Unchanged : {} (see unchanged.txt)", unchanged_files_list.len());
+        info!("  -   Removed : {} (see removed.txt)", removed_files_list.len());
+        info!("  -   Patches : {}", analysis.patch_list.len());
 
         write_file_unchecked(self.out_path.join("added.txt"), added_files_list.join("\n"));
         write_file_unchecked(self.out_path.join("removed.txt"), removed_files_list.join("\n"));
@@ -119,11 +120,11 @@ impl<'a> Generator<'a> {
     fn analyse(&mut self, skip_patches: bool) {
         let mut analysis = Analysis { ..Default::default() };
 
-        println!("[+] Building hash list for new build");
+        info!("Building hash list for new build");
         analysis.input_map = utils::hash::get_dir_hashes(&self.inp_path, None);
-        println!("[+] Building hash list for old builds");
+        info!("Building hash list for old builds");
         let old_hashes = utils::hash::get_dir_hashes_cache(&self.old_path);
-        println!("[+] Building list of changes/patches...");
+        info!("Building list of changes/patches...");
 
         // Initialise added files with all new files, and remove duplicates later
         analysis.all_files = analysis.input_map.keys().cloned().collect();
@@ -250,8 +251,8 @@ impl<'a> Generator<'a> {
             .with_finish(ProgressFinish::AndLeave);
 
         let comp_map = Arc::new(Mutex::new(&mut analysis.compressed_map));
-        let branch = &self.config.branch;
-        println!("[+] Copying/Compressing new build to updater structure...");
+        let branch = &self.config.general.branch;
+        info!("Copying/Compressing new build to updater structure...");
         analysis
             .input_map
             .par_iter()
@@ -311,7 +312,7 @@ impl<'a> Generator<'a> {
             })
             .collect();
 
-        let branch = &self.config.branch;
+        let branch = &self.config.general.branch;
         let num = patch_list_mt.len() as u64;
 
         let style =
@@ -320,8 +321,8 @@ impl<'a> Generator<'a> {
             .with_style(style.clone())
             .with_finish(ProgressFinish::AndLeave);
 
-        println!(
-            "[+] Creating delta-patches... (using: {:?})",
+        info!(
+            "Creating delta-patches... (using: {:?})",
             self.config.generate.patch_type
         );
         let patch_fun = match self.config.generate.patch_type {
@@ -351,7 +352,7 @@ impl<'a> Generator<'a> {
                 .with_style(style)
                 .with_finish(ProgressFinish::AndLeave);
 
-            println!("[+] Creating non-parallel delta-patches...");
+            info!("Creating non-parallel delta-patches...");
             patch_list_st.iter().progress_with(progress_bar_st).for_each(|patch| {
                 let package: &String = analysis.package_map.get(&patch.name).unwrap_or(&analysis.default_pkg);
                 let patch_filename = format!(
@@ -376,7 +377,7 @@ impl<'a> Generator<'a> {
 
         let analysis = self.analysis.as_ref().unwrap();
         if skip_patches || analysis.patch_list.is_empty() {
-            println!("[*] No patches to create or patch generation skipped");
+            info!("No patches to create or patch generation skipped");
             return Ok(manifest);
         }
 
@@ -390,7 +391,7 @@ impl<'a> Generator<'a> {
 fn write_file_unchecked(filename: PathBuf, contents: String) {
     if let Ok(mut f) = fs::File::create(&filename) {
         if let Err(e) = f.write_all(contents.as_bytes()) {
-            println!("Writing {} failed: {}", filename.display(), e);
+            warn!("Writing {} failed: {}", filename.display(), e);
         }
     }
 }

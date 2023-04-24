@@ -5,6 +5,7 @@ use std::process::Command;
 
 use anyhow::{bail, Result};
 use hashbrown::HashSet;
+use log::{debug, info, warn};
 use walkdir::{DirEntry, WalkDir};
 
 #[cfg(windows)]
@@ -51,7 +52,7 @@ impl<'a> Preparator<'a> {
             if !self.config.prepare.empty_output_dir {
                 bail!("Output folder not empty!");
             }
-            println!("[!] Deleting previous output dir...");
+            warn!("Deleting previous output dir...");
             fs::remove_dir_all(out_dir)?;
         }
 
@@ -63,8 +64,8 @@ impl<'a> Preparator<'a> {
     fn copy(&self) -> Result<()> {
         let copy_opts = &self.config.prepare.copy;
 
-        println!(
-            "[+] Copying build from \"{}\" to \"{}\"...",
+        info!(
+            "Copying build from \"{}\" to \"{}\"...",
             self.input_path.display(),
             self.install_path.display()
         );
@@ -143,16 +144,16 @@ impl<'a> Preparator<'a> {
         let prev_pdb_path = self.prev_pdb_path.as_ref().unwrap();
         let copy_opts = &self.config.prepare.copy;
         // Copy binaries
-        println!(
-            "[+] Copying old build files from \"{}\" to \"{}\"...",
+        info!(
+            "Copying old build files from \"{}\" to \"{}\"...",
             prev_bin_path.display(),
             self.install_path.display()
         );
         copy_files(copy_opts, prev_bin_path, &self.install_path, true, &self.exclude)?;
 
         // Copy unstripped PDBs
-        println!(
-            "[+] Copying old PDB files from \"{}\" to \"{}\"...",
+        info!(
+            "Copying old PDB files from \"{}\" to \"{}\"...",
             prev_pdb_path.display(),
             self.pdbs_path.display()
         );
@@ -170,8 +171,8 @@ impl<'a> Preparator<'a> {
             || self.config.obs_version.beta > 0
             || !self.config.obs_version.commit.is_empty();
 
-        println!(
-            "[+] Copying/stripping PDBs from \"{}\" to \"{}\"...",
+        info!(
+            "Copying/stripping PDBs from \"{}\" to \"{}\"...",
             self.install_path.display(),
             self.pdbs_path.display()
         );
@@ -218,7 +219,7 @@ impl<'a> Preparator<'a> {
             return Ok(());
         }
 
-        println!("[+] Signing files in \"{}\"", self.install_path.display());
+        info!("Signing files in \"{}\"", self.install_path.display());
         let mut to_sign: Vec<PathBuf> = Vec::new();
         let signable_exts = &self.config.prepare.codesign.sign_exts;
 
@@ -242,7 +243,7 @@ impl<'a> Preparator<'a> {
 
     #[cfg(unix)]
     fn codesign(&self) -> Result<()> {
-        println!("Codesigning is not (yet) supported on this platform.");
+        warn!("Codesigning is not (yet) supported on this platform.");
         Ok(())
     }
 
@@ -252,7 +253,7 @@ impl<'a> Preparator<'a> {
         }
 
         // Hash code sections
-        println!("[+] Hashing new and old code sections...");
+        info!("Hashing new and old code sections...");
         let prev_build_path = self.prev_bin_path.as_ref().unwrap();
         let in_hashes = get_dir_code_hashes(&self.install_path);
         let old_hashes = get_dir_code_hashes(prev_build_path);
@@ -264,6 +265,7 @@ impl<'a> Preparator<'a> {
 
             let old_info = old_hashes.get(&path).unwrap();
             if old_info.hash == file_info.hash {
+                debug!("File \"{path}\" has identical code hash, can be skipped.");
                 // Add filename minus extension to the list so PDBs are also copied from the old
                 // version. The trailing "." is included to avoid potential conflicts with files
                 // that share the same prefix but.
@@ -272,16 +274,13 @@ impl<'a> Preparator<'a> {
             }
         }
 
-        println!(
-            "[*] Found {} files to exclude based on code sections.",
-            self.exclude.len()
-        );
+        info!("Found {} files to exclude based on code sections.", self.exclude.len());
         Ok(())
     }
 
     pub fn run(mut self) -> Result<()> {
         if self.find_previous().is_err() {
-            println!("No previous builds found.")
+            warn!("No previous builds found.")
         }
 
         self.ensure_output_dir()?;

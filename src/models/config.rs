@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use anyhow::{bail, Result};
+use log::warn;
 use serde::{Deserialize, Deserializer};
 use toml;
 
@@ -13,6 +14,9 @@ use crate::utils::sign::Signer;
 
 fn get_default_branch() -> String {
     String::from("stable")
+}
+fn get_default_log_level() -> String {
+    String::from("info")
 }
 fn get_7z_bin() -> PathBuf {
     PathBuf::from("7z")
@@ -52,9 +56,8 @@ fn get_default_pdb_zip_name() -> String {
 #[derive(Deserialize, Default)]
 #[serde(default)]
 pub struct Config {
-    #[serde(default = "get_default_branch")]
-    pub branch: String,
     // Sections
+    pub general: GeneralOptions,
     pub env: EnvOptions,
     pub prepare: PreparationOptions,
     pub generate: GenerationOptions,
@@ -73,6 +76,15 @@ pub struct ObsVersion {
     pub version_patch: u8,
     pub beta: u8,
     pub rc: u8,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(default)]
+pub struct GeneralOptions {
+    #[serde(default = "get_default_branch")]
+    pub branch: String,
+    #[serde(default = "get_default_log_level")]
+    pub log_level: String,
 }
 
 #[derive(Deserialize, Default)]
@@ -235,6 +247,7 @@ impl Config {
             args.beta.unwrap_or_default(),
             args.rc.unwrap_or_default(),
         )?;
+
         if let Some(input) = &args.input {
             self.env.input_dir = input.clone();
         }
@@ -245,7 +258,7 @@ impl Config {
             self.env.previous_dir = previous.clone();
         }
         if let Some(branch) = &args.branch {
-            self.branch = branch.to_owned();
+            self.general.branch = branch.to_owned();
         }
         if let Some(commit) = &args.commit {
             self.obs_version.commit = commit.replace('g', "");
@@ -325,12 +338,12 @@ impl Config {
         }
 
         if !self.prepare.copy.excludes.is_empty() {
-            println!("Notice: \"excludes\" is deprecated in favour of \"never_copy\"");
+            warn!("\"excludes\" is deprecated in favour of \"never_copy\"");
             self.prepare.copy.never_copy.append(&mut self.prepare.copy.excludes);
         }
 
         if !self.prepare.copy.overrides_sign.is_empty() {
-            println!("Notice: \"overrides_sign\" is deprecated in favour of \"overrides\"");
+            warn!("\"overrides_sign\" is deprecated in favour of \"overrides\"");
             self.prepare
                 .copy
                 .overrides

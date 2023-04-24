@@ -1,5 +1,8 @@
+[general]
 # Branch can be set via command line as well, empty will genreate backwards-compatible update structure
 branch = "stable"
+# log levels are "trace", "debug", "info", "warn", "error"
+log_level = "debug"
 
 [env]
 # Directories for building (can be overriden via command line)

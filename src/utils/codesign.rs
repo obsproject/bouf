@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use anyhow::{anyhow, Context, Result};
+use log::{error, info};
 #[cfg(windows)]
 use winreg::enums::{HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_32KEY};
 #[cfg(windows)]
@@ -30,11 +31,11 @@ pub fn sign(files: Vec<PathBuf>, opts: &CodesignOptions) -> Result<()> {
         args.push(x.to_owned().into_os_string())
     }
 
-    println!(" => Running signtool...");
+    info!(" => Running signtool...");
     let output = Command::new(signtool).args(args).output()?;
 
     if !output.status.success() {
-        println!("signtool returned non-success status: {}", output.status);
+        error!("signtool returned non-success status: {}", output.status);
         std::io::stdout().write_all(&output.stdout)?;
         std::io::stderr().write_all(&output.stderr)?;
 
@@ -46,7 +47,8 @@ pub fn sign(files: Vec<PathBuf>, opts: &CodesignOptions) -> Result<()> {
 
 #[cfg(unix)]
 pub fn sign(files: Vec<PathBuf>, opts: &CodesignOptions) -> Result<()> {
-    println!("Codesigning is not (yet) supported on this platform.");
+    use log::warn;
+    warn!("Codesigning is not (yet) supported on this platform.");
 
     Ok(())
 }
@@ -80,7 +82,7 @@ fn locate_signtool() -> Result<PathBuf> {
         .filter_map(|res| match res {
             Ok(v) => Some(v),
             Err(err) => {
-                println!("[!] Error enumerating installed root keys: {err}");
+                error!("Error enumerating installed root keys: {err}");
                 None
             }
         })
