@@ -73,6 +73,7 @@ impl<'a> Preparator<'a> {
         copy_files(copy_opts, &self.input_path, &self.install_path, false, &self.exclude)?;
 
         // Copy override files over
+        debug!("Copying override files...");
         for (ins_path, ovr_path) in copy_opts.overrides.as_slice() {
             if fs::metadata(ovr_path).is_err() {
                 bail!("Override file \"{}\" does not exist!", ovr_path)
@@ -129,6 +130,7 @@ impl<'a> Preparator<'a> {
             bail!("Previous PDB path \"{}\" does not exist!", pdb_path.display());
         }
 
+        info!("Previous build used: \"{ver_str}\"");
         self.prev_pdb_path = Some(pdb_path);
         self.prev_bin_path = Some(build_path);
 
