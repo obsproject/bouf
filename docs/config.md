@@ -116,4 +116,4 @@ e.g. when the files are from version that are no longer included in the `previou
 
 ## `[post]` Section
 
-- `copy_to_old` (bool) - Whether to copy the final directory to `previous_dir` (default: `false`)
+- `copy_to_old` (bool) - Whether to copy the final directory to `previous_dir` (default: `true`)

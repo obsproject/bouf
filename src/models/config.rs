@@ -153,7 +153,7 @@ pub struct UpdaterOptions {
     pub vc_redist_path: PathBuf,
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize)]
 #[serde(default)]
 pub struct PostOptions {
     pub copy_to_old: bool,
@@ -243,6 +243,12 @@ impl Default for ZipOptions {
             name: "OBS-Studio-{version}.zip".to_string(),
             pdb_name: "OBS-Studio-{version}-pdbs.zip".to_string(),
         }
+    }
+}
+
+impl Default for PostOptions {
+    fn default() -> Self {
+        Self { copy_to_old: true }
     }
 }
 
