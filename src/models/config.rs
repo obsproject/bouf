@@ -12,45 +12,8 @@ use crate::models::args::MainArgs;
 use crate::utils::misc;
 use crate::utils::sign::Signer;
 
-fn get_default_branch() -> String {
-    String::from("stable")
-}
-fn get_default_log_level() -> String {
-    String::from("info")
-}
-fn get_7z_bin() -> PathBuf {
-    PathBuf::from("7z")
-}
-fn get_makensis_bin() -> PathBuf {
-    PathBuf::from("makensis")
-}
-fn get_pandoc_bin() -> PathBuf {
-    PathBuf::from("pandoc")
-}
-fn get_pdbcopy_bin() -> PathBuf {
-    PathBuf::from("pdbcopy")
-}
-fn get_compression_default() -> bool {
-    true
-}
-fn get_always_copied() -> Vec<String> {
-    vec![
-        "obs64".to_string(),
-        "obspython".to_string(),
-        "obslua".to_string(),
-        "obs-frontend-api".to_string(),
-        "obs.dll".to_string(),
-        "obs.pdb".to_string(),
-    ]
-}
 fn get_signed_exts() -> Vec<String> {
     vec!["exe".to_string(), "dll".to_string(), "pyd".to_string()]
-}
-fn get_default_zip_name() -> String {
-    String::from("OBS-Studio-{version}.zip")
-}
-fn get_default_pdb_zip_name() -> String {
-    String::from("OBS-Studio-{version}-pdbs.zip")
 }
 
 #[derive(Deserialize, Default)]
@@ -78,29 +41,23 @@ pub struct ObsVersion {
     pub rc: u8,
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize)]
 #[serde(default)]
 pub struct GeneralOptions {
-    #[serde(default = "get_default_branch")]
     pub branch: String,
-    #[serde(default = "get_default_log_level")]
     pub log_level: String,
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize)]
 #[serde(default)]
 pub struct EnvOptions {
     pub input_dir: PathBuf,
     pub output_dir: PathBuf,
     pub previous_dir: PathBuf,
     // Tool paths
-    #[serde(default = "get_7z_bin")]
     pub sevenzip_path: PathBuf,
-    #[serde(default = "get_makensis_bin")]
     pub makensis_path: PathBuf,
-    #[serde(default = "get_pandoc_bin")]
     pub pandoc_path: PathBuf,
-    #[serde(default = "get_pdbcopy_bin")]
     pub pdbcopy_path: PathBuf,
 }
 
@@ -113,12 +70,11 @@ pub struct PreparationOptions {
     pub strip_pdbs: StripPDBOptions,
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize)]
 #[serde(default)]
 pub struct CopyOptions {
     pub excludes: Vec<String>,
     pub never_copy: Vec<String>,
-    #[serde(default = "get_always_copied")]
     pub always_copy: Vec<String>,
     pub overrides: Vec<(String, String)>,
     pub overrides_sign: Vec<(String, String)>,
@@ -142,13 +98,12 @@ pub struct StripPDBOptions {
     pub skip_for_prerelease: bool,
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize)]
 #[serde(default)]
 pub struct GenerationOptions {
     #[serde(deserialize_with = "deserialize_patch_type")]
     pub patch_type: PatchType,
     pub skip_for_prerelease: bool,
-    #[serde(default = "get_compression_default")]
     pub compress_files: bool,
     pub removed_files: Vec<String>,
     pub exclude_from_parallel: Vec<String>,
@@ -180,12 +135,10 @@ pub struct InstallerOptions {
     pub skip: bool,
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize)]
 #[serde(default)]
 pub struct ZipOptions {
-    #[serde(default = "get_default_zip_name")]
     pub name: String,
-    #[serde(default = "get_default_pdb_zip_name")]
     pub pdb_name: String,
 }
 
@@ -225,6 +178,71 @@ impl PartialOrd for ObsVersion {
         let other_ver: u32 = other.into();
 
         Some(self_ver.cmp(&other_ver))
+    }
+}
+
+impl Default for GeneralOptions {
+    fn default() -> Self {
+        Self {
+            branch: "stable".to_string(),
+            log_level: "info".to_string(),
+        }
+    }
+}
+
+impl Default for EnvOptions {
+    fn default() -> Self {
+        Self {
+            sevenzip_path: PathBuf::from("7z"),
+            makensis_path: PathBuf::from("makensis"),
+            pandoc_path: PathBuf::from("pandoc"),
+            pdbcopy_path: PathBuf::from("pdbcopy"),
+            input_dir: PathBuf::new(),
+            output_dir: PathBuf::new(),
+            previous_dir: PathBuf::new(),
+        }
+    }
+}
+
+impl Default for CopyOptions {
+    fn default() -> Self {
+        Self {
+            excludes: Vec::new(),
+            never_copy: Vec::new(),
+            overrides: Vec::new(),
+            overrides_sign: Vec::new(),
+            always_copy: vec![
+                "obs64".to_string(),
+                "obspython".to_string(),
+                "obslua".to_string(),
+                "obs-frontend-api".to_string(),
+                "obs.dll".to_string(),
+                "obs.pdb".to_string(),
+            ],
+        }
+    }
+}
+
+impl Default for GenerationOptions {
+    fn default() -> Self {
+        Self {
+            patch_type: PatchType::Zstd,
+            skip_for_prerelease: false,
+            compress_files: true,
+            removed_files: Vec::new(),
+            exclude_from_removal: Vec::new(),
+            exclude_from_parallel: Vec::new(),
+            packages: Vec::new(),
+        }
+    }
+}
+
+impl Default for ZipOptions {
+    fn default() -> Self {
+        Self {
+            name: "OBS-Studio-{version}.zip".to_string(),
+            pdb_name: "OBS-Studio-{version}-pdbs.zip".to_string(),
+        }
     }
 }
 
