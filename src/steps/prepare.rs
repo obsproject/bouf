@@ -165,11 +165,6 @@ impl<'a> Preparator<'a> {
     /// Move PDBs (except excluded) to separate dir, then strip remaining ones
     fn strip_pdbs(&self) -> Result<()> {
         let opts = &self.config.prepare.strip_pdbs;
-        let copy_opts = &self.config.prepare.copy;
-
-        let is_prerelease = self.config.obs_version.rc > 0
-            || self.config.obs_version.beta > 0
-            || !self.config.obs_version.commit.is_empty();
 
         info!(
             "Copying/stripping PDBs from \"{}\" to \"{}\"...",
@@ -192,11 +187,8 @@ impl<'a> Preparator<'a> {
             if let Some(_parent) = new_path.parent() {
                 fs::create_dir_all(_parent)?;
             }
-            // Skip files excluded or that were overrides, also do not strip for betas if enabled
-            if (opts.skip_for_prerelease && is_prerelease)
-                || opts.exclude.iter().any(|x| relative_path_str.contains(x))
-                || copy_opts.overrides.iter().any(|(p, _)| relative_path_str == *p)
-            {
+            // Simply copy files excluded from stripping
+            if opts.exclude.iter().any(|x| relative_path_str.contains(x)) {
                 fs::copy(file.path(), &new_path)?;
                 continue;
             }

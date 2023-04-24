@@ -95,7 +95,6 @@ pub struct CodesignOptions {
 #[serde(default)]
 pub struct StripPDBOptions {
     pub exclude: Vec<String>,
-    pub skip_for_prerelease: bool,
 }
 
 #[derive(Deserialize)]
@@ -103,7 +102,6 @@ pub struct StripPDBOptions {
 pub struct GenerationOptions {
     #[serde(deserialize_with = "deserialize_patch_type")]
     pub patch_type: PatchType,
-    pub skip_for_prerelease: bool,
     pub compress_files: bool,
     pub removed_files: Vec<String>,
     pub exclude_from_parallel: Vec<String>,
@@ -227,7 +225,6 @@ impl Default for GenerationOptions {
     fn default() -> Self {
         Self {
             patch_type: PatchType::Zstd,
-            skip_for_prerelease: false,
             compress_files: true,
             removed_files: Vec::new(),
             exclude_from_removal: Vec::new(),

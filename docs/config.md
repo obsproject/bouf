@@ -58,7 +58,6 @@ Additionally, both `input_dir` and `output_dir` must exist.
 
 ## `[prepare.strip_pdbs]` Subsection
 
-- `skip_for_prerelease` (bool) - Skip PDB stripping for pre-release builds (default: `false`)
 - `exclude` (array of filenames) - PDB filenames to exclude from stripping
 
 ## `[generate]` Section
