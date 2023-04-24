@@ -23,62 +23,27 @@ cargo build -r --bin bouf
 
 ## Full help text
 ```
-Building OBS Updates Fast(er)
-
 Usage: bouf [OPTIONS] --config <config.toml> --version <Major.Minor.Patch[-(rc|beta)Num]>
 
 Options:
-  -c, --config <config.toml>
-          Configuration file
-
-  -v, --version <Major.Minor.Patch[-(rc|beta)Num]>
-          OBS main version
-
-      --beta <Beta number>
-          Beta number
-
-      --rc <RC number>
-          RC number
-
-      --branch <Beta branch>
-          Branch used in manifest name/update files
-
-      --commit <commit hash>
-          Commit hash used in manifest
-
-  -i, --input <new build>
-
-  -p, --previous <old builds>
-
-  -o, --output <output dir>
-
-      --notes-file <file.rtf>
-          File containing release notes
-
-      --private-key <file.pem>
-          Falls back to "UPDATER_PRIVATE_KEY" env var
-
-      --updater-data-only
-          Create only delta patches and manifest
-
-      --skip-installer
-          Skip creating NSIS installer
-
-      --skip-patches
-          Skip creating delta patches
-
-      --skip-codesigning
-          Skip codesigning
-
-      --skip-manifest-signing
-          Skip signing manifest
-
-      --clear-output
-          Clear existing output directory
-
-  -h, --help
-          Print help (see a summary with '-h')
-
-  -V, --version
-          Print version
+  -c, --config <config.toml>                        Configuration file
+  -v, --version <Major.Minor.Patch[-(rc|beta)Num]>  OBS main version
+      --beta <Beta number>                          Beta number
+      --rc <RC number>                              RC number
+      --branch <Beta branch>                        Branch used in manifest name/update files
+      --commit <commit hash>                        Commit hash used in manifest
+  -i, --input <new build>                           
+  -p, --previous <old builds>                       
+  -o, --output <output dir>                         
+      --notes-file <file.rtf>                       File containing release notes
+      --private-key <file.pem>                      Falls back to "UPDATER_PRIVATE_KEY" env var
+      --updater-data-only                           Create only delta patches and manifest
+      --skip-installer                              Skip creating NSIS installer
+      --skip-patches                                Skip creating delta patches
+      --skip-codesigning                            Skip codesigning
+      --skip-manifest-signing                       Skip signing manifest
+      --clear-output                                Clear existing output directory
+  -d, --verbose                                     Verbose logging
+  -h, --help                                        Print help (see more with '--help')
+  -V, --version                                     Print version
 ```
