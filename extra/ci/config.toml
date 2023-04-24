@@ -1,3 +1,6 @@
+[general]
+log_level = "trace"
+
 [env]
 # On CI these should be in %PATH%
 sevenzip_path = "7z"
