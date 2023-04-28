@@ -15,7 +15,7 @@ struct Args {
     #[arg(short, long, value_name = "Private key PEM file")]
     private_key: Option<PathBuf>,
 
-    #[arg()]
+    #[arg(short, long, value_name = "Files to sign")]
     files: Vec<PathBuf>,
 }
 
