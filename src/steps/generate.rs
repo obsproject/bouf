@@ -1,18 +1,20 @@
 use std::fs;
-use std::io::Write;
+use std::fs::File;
+use std::io::{BufWriter, Write};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use hashbrown::{HashMap, HashSet};
 use indicatif::{ParallelProgressIterator, ProgressBar, ProgressFinish, ProgressIterator, ProgressStyle};
-use log::{info, warn};
+use log::{debug, info, trace, warn};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use serde::{Deserialize, Serialize};
 
 use crate::models::config::{Config, PatchType};
 use crate::models::manifest::{FileEntry, Manifest, Package};
 use crate::utils;
-use crate::utils::hash::FileInfo;
+use crate::utils::hash::{hash_string, FileInfo};
 use crate::utils::misc;
 use crate::utils::zstd::compress_file;
 
@@ -49,6 +51,22 @@ struct Analysis {
     // Map of removed/input file names to package
     default_pkg: String,
     package_map: HashMap<String, String>,
+    // Hash list used for bundle files
+    bundle_hashes: HashMap<String, Vec<BundleFile>>,
+}
+
+struct BundleFile {
+    info: FileInfo,
+    path: String,
+    has_patch: bool,
+}
+
+#[derive(Serialize, Deserialize)]
+struct BundlePatchEntry {
+    pub filename: String,
+    pub hash: String,
+    pub size: u64,
+    pub offset: u64,
 }
 
 impl<'a> Generator<'a> {
@@ -133,16 +151,26 @@ impl<'a> Generator<'a> {
         let mut seen_hashes: HashSet<(String, String)> = HashSet::new();
 
         for (path, fileinfo) in old_hashes {
+            // Add hash to list of version's hashes
+            let version = path[..path.find('/').unwrap_or(0)].to_owned();
             // Strip version (first folder name) from path
             let mut rel_path = path[path.find('/').unwrap_or(0) + 1..].to_owned();
             // For backwards-compatibility: Remove "core/" and "obs-browser/" package prefixes in filenames
             if rel_path.starts_with("core") || rel_path.starts_with("obs-browser") {
                 rel_path = rel_path[rel_path.find('/').unwrap_or(0) + 1..].parse().unwrap();
             }
+            // Metadata used for patch bundle creation
+            let mut bundle_file = BundleFile {
+                info: fileinfo.to_owned(),
+                path: rel_path.to_owned(),
+                has_patch: false,
+            };
 
             // Skip (hash, filename) pairs we already added to the patch list
             let seen_key = (fileinfo.hash.to_owned(), rel_path.to_owned());
             if seen_hashes.contains(&seen_key) {
+                bundle_file.has_patch = true;
+                analysis.bundle_hashes.entry(version).or_default().push(bundle_file);
                 continue;
             } else if !analysis.input_map.contains_key(&rel_path) {
                 // Only add files to removed that do not match any exclusion filter
@@ -161,6 +189,7 @@ impl<'a> Generator<'a> {
                 // Skip if old and new hash match
                 if analysis.input_map.get(&rel_path).unwrap().hash == fileinfo.hash {
                     analysis.unchanged_files.insert(rel_path.clone());
+                    analysis.bundle_hashes.entry(version).or_default().push(bundle_file);
                     continue;
                 }
                 analysis.changed_files.insert(rel_path.clone());
@@ -173,6 +202,9 @@ impl<'a> Generator<'a> {
                     old_file: self.old_path.join(path),
                     new_file: self.inp_path.join(rel_path),
                 });
+
+                bundle_file.has_patch = true;
+                analysis.bundle_hashes.entry(version).or_default().push(bundle_file);
             }
 
             seen_hashes.insert(seen_key);
@@ -284,7 +316,7 @@ impl<'a> Generator<'a> {
             self.fill_package_map();
         }
         std::fs::create_dir_all(&self.out_path).expect("Failed to create output directory");
-        let analysis = self.analysis.as_ref().unwrap();
+        let analysis = self.analysis.as_mut().unwrap();
 
         // Patches to generate in single-threaded mode (e.g. CEF on CI)
         let patch_list_st: Vec<&Patch> = analysis
@@ -363,6 +395,85 @@ impl<'a> Generator<'a> {
                 fs::create_dir_all(outfile.parent().unwrap()).expect("Failed creating folder!");
                 patch_fun(&patch.old_file, &patch.new_file, &outfile).expect("Creating patch failed horribly.");
             });
+        }
+
+        // Create patch bundles
+        let patches_dir = self.out_path.join(format!("updater/patches_studio/{branch}"));
+        info!("Hasing patch files for bundle creation");
+        let patch_files = utils::hash::get_dir_hashes(&patches_dir, None);
+
+        info!("Writing patch bundles:");
+        for (version, file_infos) in &mut analysis.bundle_hashes {
+            info!("=> Processing \"{version}\"...");
+            file_infos.sort_by(|a, b| a.info.hash.cmp(&b.info.hash));
+
+            for package in &self.config.generate.packages {
+                let package_name = &package.name;
+                // Bundle file contents
+                let mut body = Vec::<u8>::new();
+                let mut meta = Vec::<BundlePatchEntry>::new();
+
+                //s let mut patch_list: Vec<BundlePatchEntry> = Vec::new();
+                let mut hashes_concact = String::new();
+                let mut files = 0;
+
+                for file_info in &*file_infos {
+                    // Skip files not belonging to this package or that don't have a patch
+                    let package: &String = analysis
+                        .package_map
+                        .get(&file_info.path)
+                        .unwrap_or(&analysis.default_pkg);
+                    if package != package_name || !file_info.has_patch {
+                        continue;
+                    }
+                    hashes_concact.push_str(file_info.info.hash.as_str());
+                    files += 1;
+                    let patch_path = format!("{}/{}/{}", package_name, file_info.path, file_info.info.hash);
+                    let entry = patch_files.get(&patch_path);
+                    if let Some(patch_file) = entry {
+                        meta.push(BundlePatchEntry {
+                            filename: file_info.path.to_owned(),
+                            hash: patch_file.hash.to_owned(),
+                            size: patch_file.size,
+                            offset: body.len() as u64,
+                        });
+                        // Append file to buffer
+                        trace!("Adding \"{patch_path}\" to bundle");
+                        let fc = fs::read(self.out_path.join(&patches_dir).join(&patch_path))?;
+                        body.write_all(&fc)?;
+                    } else {
+                        bail!(
+                            "Patch file info NOT found: {} -> {} -> {}",
+                            version,
+                            package_name,
+                            patch_path
+                        )
+                    }
+                }
+
+                // If there are no patches for this package, continue
+                if files == 0 {
+                    continue;
+                }
+
+                let bundle_name = hash_string(&hashes_concact);
+                let bundle_file = format!("updater/patches_studio/{branch}/{package_name}/bundle/{bundle_name}");
+                let bundle_file_path = self.out_path.join(&bundle_file);
+                fs::create_dir_all(bundle_file_path.parent().unwrap())?;
+                debug!("Creating \"{version}\", \"{package_name}\" bundle file with {files} files.");
+
+                // Serialise JSON
+                let json = serde_json::to_string(&meta)?;
+
+                // Write bundle file
+                let fc = File::create(bundle_file_path)?;
+                let mut bw = BufWriter::new(fc);
+                bw.write_all(b"BOUF//BUNDLE//V1")?;
+                bw.write_all(&json.len().to_le_bytes())?;
+                bw.write_all(json.as_bytes())?;
+                bw.write_all(&body)?;
+                bw.flush()?;
+            }
         }
 
         Ok(())
