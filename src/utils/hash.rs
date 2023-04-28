@@ -215,6 +215,21 @@ pub fn get_dir_code_hashes(path: &PathBuf) -> HashMap<String, FileInfo> {
     hashes
 }
 
+pub fn hash_string(input: &String) -> String {
+    let mut hash_buf = [0u8; 20];
+    let mut hasher = Blake2bVar::new(BLAKE2_HASH_SIZE).unwrap();
+
+    hasher.update(input.as_bytes());
+    hasher.finalize_variable(&mut hash_buf).unwrap();
+
+    let mut s = String::with_capacity(2 * BLAKE2_HASH_SIZE);
+    for byte in hash_buf {
+        write!(s, "{byte:02x}").unwrap();
+    }
+
+    s
+}
+
 #[cfg(test)]
 mod hash_tests {
     use super::*;
