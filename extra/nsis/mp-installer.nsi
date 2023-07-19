@@ -374,9 +374,10 @@ Section "un.${APPNAME} App Files" UninstallSection1
 
 	SectionIn RO
 
-	; Remove hook files and vulkan registry
+	; Remove hook files, shader cache, and vulkan registry
 	SetShellVarContext all
 
+	RMDir /r "$APPDATA\obs-studio\shader-cache"
 	RMDir /r "$APPDATA\obs-studio-hook"
 
 	SetRegView 32
