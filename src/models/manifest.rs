@@ -30,7 +30,6 @@ pub struct Package {
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct FileEntry {
-    #[serde(skip_serializing_if = "String::is_empty")]
     pub compressed_hash: String,
     pub hash: String,
     pub name: String,
