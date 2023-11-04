@@ -21,11 +21,24 @@ pub fn sign(files: Vec<PathBuf>, opts: &CodesignOptions) -> Result<()> {
         "sign".into(),
         "/fd".into(),
         opts.sign_digest.to_owned().into(),
-        "/n".into(),
-        opts.sign_name.to_owned().into(),
         "/t".into(),
         opts.sign_ts_serv.to_owned().into(),
     ];
+
+    if let Some(name) = &opts.sign_name {
+        args.push("/n".into());
+        args.push(name.to_owned().into());
+    } else if let Some(file) = &opts.sign_cert_file {
+        args.push("/f".into());
+        args.push(file.into());
+    }
+
+    if let Some(kms_id) = &opts.sign_kms_key_id {
+        args.push("/csp".into());
+        args.push("Google Cloud KMS Provider".into());
+        args.push("/kc".into());
+        args.push(kms_id.into());
+    }
 
     for x in files {
         args.push(x.to_owned().into_os_string())

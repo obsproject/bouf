@@ -84,11 +84,13 @@ pub struct CopyOptions {
 #[serde(default)]
 pub struct CodesignOptions {
     pub skip_sign: bool,
-    pub sign_name: String,
+    pub sign_name: Option<String>,
     pub sign_digest: String,
     pub sign_ts_serv: String,
     #[serde(default = "get_signed_exts")]
     pub sign_exts: Vec<String>,
+    pub sign_kms_key_id: Option<String>,
+    pub sign_cert_file: Option<String>,
 }
 
 #[derive(Deserialize, Default)]
@@ -350,7 +352,21 @@ impl Config {
         // Check if codesigning parameters are set (if enabled)
         #[cfg(windows)]
         if !self.prepare.codesign.skip_sign
-            && (self.prepare.codesign.sign_name.is_empty()
+            // This is kind of horrible.
+            && ((self
+                .prepare
+                .codesign
+                .sign_name
+                .as_deref()
+                .unwrap_or_default()
+                .is_empty()
+                && self
+                    .prepare
+                    .codesign
+                    .sign_cert_file
+                    .as_deref()
+                    .unwrap_or_default()
+                    .is_empty())
                 || self.prepare.codesign.sign_digest.is_empty()
                 || self.prepare.codesign.sign_ts_serv.is_empty()
                 || self.prepare.codesign.sign_exts.is_empty())
