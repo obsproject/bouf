@@ -337,7 +337,7 @@ fn copy_files(
                 continue;
             }
             // Include filtered files when copying old build
-            if copying_old && !filter.is_empty() && !filter.iter().any(|f| relative_path_str.starts_with(f)) {
+            if copying_old && !filter.iter().any(|f| relative_path_str.starts_with(f)) {
                 continue;
             }
         } else if copying_old {
