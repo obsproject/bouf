@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use clap::Parser;
 
 #[derive(Parser, Debug)]
-#[command(version, about, long_about = "Building OBS Updates Fast(er)")]
+#[command(about, long_about = "Building OBS Updates Fast(er)")]
 pub struct MainArgs {
     // Required
     /// Configuration file
@@ -24,12 +24,7 @@ pub struct MainArgs {
     #[arg(long, value_name = "Beta branch")]
     pub branch: Option<String>,
     /// Commit hash used in manifest
-    #[arg(
-        long,
-        value_name = "commit hash",
-        conflicts_with = "exclude",
-        conflicts_with = "include"
-    )]
+    #[arg(long, value_name = "commit hash")]
     pub commit: Option<String>,
 
     // Optional overrides
