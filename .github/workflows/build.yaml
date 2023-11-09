@@ -32,6 +32,76 @@ jobs:
           name: bouf-build-${{ matrix.os }}
           path: target/release/bouf*
 
+  jsign:
+    name: Test Signing (Jsign)
+    needs: build_release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: 'repo'
+          sparse-checkout: 'extra/ci'
+
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'microsoft'
+          java-version: '17'
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: bouf-build-windows-latest
+          path: build
+    
+      - name: 'Authenticate with Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          workload_identity_provider: ${{ secrets.GCP_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v1'
+
+      - name: 'Generate auth token'
+        id: token
+        run: |
+          TOKEN=$(gcloud auth print-access-token)
+          echo "::add-mask::${TOKEN}"
+          echo "token=${TOKEN}" >> $GITHUB_OUTPUT
+
+      - name: 'Download jsign'
+        env:
+          JSIGN_VERSION: '5.0'
+          JSIGN_HASH: '30cac7606167487b2584a48fb8102bf958238f6f7118840c677baadc1d2c4fca'
+        run: |
+          curl -o jsign.jar -L https://github.com/ebourg/jsign/releases/download/${JSIGN_VERSION}/jsign-${JSIGN_VERSION}.jar
+          HASH=$(sha256sum "jsign.jar" | cut -d " " -f 1)
+          if [[ ${HASH} != ${JSIGN_HASH} ]]; then
+            echo "JSIGN hash mismatch! ${HASH} != ${JSIGN_HASH}"
+            exit 1
+          fi
+
+      - name: 'Run jsign'
+        run: |
+          java -jar jsign.jar \
+            --storetype "GOOGLECLOUD" \
+            --keystore "projects/ci-signing/locations/global/keyRings/testing" \
+            --storepass "${{ steps.token.outputs.token }}" \
+            --alias "signing-hsm/cryptoKeyVersions/1" \
+            --certfile "repo/extra/ci/public.crt" \
+            --tsaurl "http://timestamp.digicert.com" \
+            build/*.exe
+
+      - name: Upload results
+        uses: actions/upload-artifact@v3
+        with:
+          name: bouf-windows-testsigned
+          path: build/*
+
   publish_release:
     name: Publish Release
     needs: build_release
