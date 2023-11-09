@@ -4,6 +4,7 @@ on:
   push:
     paths-ignore:
       - 'extra/**'
+    tags:
 
 jobs:
   build_release:
@@ -30,6 +31,48 @@ jobs:
         with:
           name: bouf-build-${{ matrix.os }}
           path: target/release/bouf*
+
+  publish_release:
+    name: Publish Release
+    needs: build_release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: 'repo'
+          sparse-checkout: 'extra/nsis'
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Package binaries
+        run: |
+          zip -j -r9 bouf-windows-${{ github.ref_name }}.zip bouf-build-windows-*/
+          zip -j -r9 bouf-mac-${{ github.ref_name }}.zip bouf-build-macos-*/
+          zip -j -r9 bouf-linux-${{ github.ref_name }}.zip bouf-build-ubuntu-*/
+          zip -j -r9 bouf-nsis-${{ github.ref_name }}.zip repo/extra/nsis
+
+      - name: Generate Checksums
+        run: |
+          : Generate Checksums
+          shopt -s extglob
+          echo "### Checksums" > ${{ github.workspace }}/CHECKSUMS.txt
+          for file in ${{ github.workspace }}/@(*.tar.xz|*.zip); do
+            echo "    ${file##*/}: $(sha256sum "${file}" | cut -d " " -f 1)" >> ${{ github.workspace }}/CHECKSUMS.txt
+          done
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
+        with:
+          draft: true
+          prerelease: false
+          name: Bouf ${{ github.ref_name }}
+          body_path: ${{ github.workspace }}/CHECKSUMS.txt
+          files: |
+            ${{ github.workspace }}/bouf*.zip
 
   tests:
     name: Run tests
