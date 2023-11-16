@@ -348,6 +348,10 @@ Section -FinishSection
 	${endif}
 
 	# ---------------------------------------
+    # Clear shader cache
+	RMDir /r "$APPDATA\obs-studio\shader-cache"
+
+	# ---------------------------------------
 
 	ClearErrors
 	SetRegView default
