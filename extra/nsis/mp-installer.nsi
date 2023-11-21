@@ -66,7 +66,7 @@ RequestExecutionLevel admin
 !define MUI_FINISHPAGE_SHOWREADME_TEXT "View Release Notes"
 !define MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
 !define MUI_FINISHPAGE_LINK "New to OBS? Check out our 4-step Quickstart Guide."
-!define MUI_FINISHPAGE_LINK_LOCATION "https://obsproject.com/wiki/OBS-Studio-Quickstart"
+!define MUI_FINISHPAGE_LINK_LOCATION "https://obsproject.com/kb/quick-start-guide"
 !define MUI_FINISHPAGE_LINK_COLOR 000080
 
 !define MUI_WELCOMEPAGE_TEXT "This setup will guide you through installing OBS Studio.\n\nIt is recommended that you close all other applications before starting, including OBS Studio. This will make it possible to update relevant files without having to reboot your computer.\n\nClick Next to continue."
