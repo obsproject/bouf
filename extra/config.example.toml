@@ -127,6 +127,7 @@ nsis_script = "C:/Path/to/installer.nsi"
 skip_sign = false
 
 [package.zip]
+skip = false
 # Note: {version} will be <Major>.<Minor>[.<Patch>] and suffixied with "-rc<Num>" or "-beta<Num>" if provided
 name = "OBS-Studio-{version}.zip"
 pdb_name = "OBS-Studio-{version}-pdbs.zip"
