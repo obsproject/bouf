@@ -55,7 +55,7 @@ fn main() -> Result<()> {
         info!("Skipping installer creation...")
     }
 
-    if !args.updater_data_only {
+    if !args.updater_data_only && !conf.package.zip.skip {
         // Create PDB and install folder ZIPs
         info!("Creating zip files...");
         packager.create_zips().context("Creating zip files failed")?;

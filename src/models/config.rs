@@ -138,6 +138,7 @@ pub struct InstallerOptions {
 #[derive(Deserialize)]
 #[serde(default)]
 pub struct ZipOptions {
+    pub skip: bool,
     pub name: String,
     pub pdb_name: String,
 }
@@ -239,6 +240,7 @@ impl Default for GenerationOptions {
 impl Default for ZipOptions {
     fn default() -> Self {
         Self {
+            skip: false,
             name: "OBS-Studio-{version}.zip".to_string(),
             pdb_name: "OBS-Studio-{version}-pdbs.zip".to_string(),
         }
