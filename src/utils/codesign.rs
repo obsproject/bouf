@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use anyhow::{anyhow, Context, Result};
-use log::{error, info};
+use log::{debug, error, info};
 #[cfg(windows)]
 use winreg::enums::{HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_32KEY};
 #[cfg(windows)]
@@ -16,6 +16,7 @@ use crate::models::config::CodesignOptions;
 #[cfg(windows)]
 pub fn sign(files: Vec<PathBuf>, opts: &CodesignOptions) -> Result<()> {
     let signtool = locate_signtool()?;
+    debug!("Signtool found at {:?}", signtool);
 
     let mut args: Vec<OsString> = vec![
         "sign".into(),
@@ -109,12 +110,20 @@ fn locate_signtool() -> Result<PathBuf> {
         .map(|kit| kits_root_10_bin_path.join(kit))
         .collect();
 
-    for kit_bin_path in &kit_bin_paths {
+    let mut found_path: Option<PathBuf> = None;
+
+    for kit_bin_path in kit_bin_paths.iter() {
         let signtool_path = kit_bin_path.join("x64").join("signtool.exe");
         if signtool_path.exists() {
-            return Ok(signtool_path);
+            debug!("signtool version found at {:?}", signtool_path);
+            if found_path.is_none() {
+                found_path = Some(signtool_path);
+            }
         }
     }
 
-    Err(anyhow!("Signtool was not found!"))
+    match found_path {
+        Some(path) => Ok(path),
+        None => Err(anyhow!("Signtool was not found!"))
+    }
 }
