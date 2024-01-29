@@ -14,7 +14,7 @@ use winreg::RegKey;
 
 use crate::models::config::CodesignOptions;
 
-const MAX_FILES: usize = 5;
+const MAX_FILES: usize = 1;
 // std::process::Output's status is returned as an i32, but on Windows it's a u32
 const IGNORE_STATUS: i32 = 0xc0000374u32 as i32;
 
@@ -57,6 +57,9 @@ pub fn sign(files: Vec<PathBuf>, opts: &CodesignOptions) -> Result<()> {
         }
 
         info!(" => Running signtool ({ctr}/{slices})...");
+        if chunk.len() == 1 {
+            debug!("  + Signing file {:?}", chunk[0]);
+        }
         let output = Command::new(&signtool).args(chunk_args).output()?;
 
         if !output.status.success() {
