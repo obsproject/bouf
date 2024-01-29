@@ -124,6 +124,6 @@ fn locate_signtool() -> Result<PathBuf> {
 
     match found_path {
         Some(path) => Ok(path),
-        None => Err(anyhow!("Signtool was not found!"))
+        None => Err(anyhow!("Signtool was not found!")),
     }
 }
