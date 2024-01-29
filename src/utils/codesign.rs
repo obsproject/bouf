@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use anyhow::{anyhow, Context, Result};
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 #[cfg(windows)]
 use winreg::enums::{HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_32KEY};
 #[cfg(windows)]
@@ -15,6 +15,8 @@ use winreg::RegKey;
 use crate::models::config::CodesignOptions;
 
 const MAX_FILES: usize = 20;
+// std::process::Output's status is returned as an i32, but on Windows it's a u32
+const IGNORE_STATUS: i32 = 0xc0000374u32 as i32;
 
 #[cfg(windows)]
 pub fn sign(files: Vec<PathBuf>, opts: &CodesignOptions) -> Result<()> {
@@ -58,6 +60,11 @@ pub fn sign(files: Vec<PathBuf>, opts: &CodesignOptions) -> Result<()> {
         let output = Command::new(&signtool).args(chunk_args).output()?;
 
         if !output.status.success() {
+            // Annoying error code that seems to only happen *after* successfully signing...
+            if output.status.code().unwrap() == IGNORE_STATUS {
+                warn!("signtool returned ignored non-success status: {}", output.status);
+                continue;
+            }
             error!("signtool returned non-success status: {}", output.status);
             std::io::stdout().write_all(&output.stdout)?;
             std::io::stderr().write_all(&output.stderr)?;
