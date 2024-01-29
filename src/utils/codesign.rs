@@ -14,7 +14,7 @@ use winreg::RegKey;
 
 use crate::models::config::CodesignOptions;
 
-const MAX_FILES: usize = 20;
+const MAX_FILES: usize = 5;
 // std::process::Output's status is returned as an i32, but on Windows it's a u32
 const IGNORE_STATUS: i32 = 0xc0000374u32 as i32;
 
