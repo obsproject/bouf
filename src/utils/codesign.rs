@@ -1,4 +1,5 @@
 #![allow(unused_variables)]
+
 use std::ffi::OsString;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -12,6 +13,8 @@ use winreg::enums::{HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_32KEY};
 use winreg::RegKey;
 
 use crate::models::config::CodesignOptions;
+
+const MAX_FILES: usize = 20;
 
 #[cfg(windows)]
 pub fn sign(files: Vec<PathBuf>, opts: &CodesignOptions) -> Result<()> {
@@ -41,22 +44,29 @@ pub fn sign(files: Vec<PathBuf>, opts: &CodesignOptions) -> Result<()> {
         args.push(kms_id.into());
     }
 
-    for x in files {
-        args.push(x.to_owned().into_os_string())
+    let slices = (files.len() + MAX_FILES - 1) / MAX_FILES;
+    let mut ctr = 0;
+
+    for chunk in files.chunks(MAX_FILES) {
+        ctr += 1;
+        let mut chunk_args = args.to_owned();
+        for x in chunk {
+            chunk_args.push(x.to_owned().into_os_string())
+        }
+
+        info!(" => Running signtool ({ctr}/{slices})...");
+        let output = Command::new(&signtool).args(chunk_args).output()?;
+
+        if !output.status.success() {
+            error!("signtool returned non-success status: {}", output.status);
+            std::io::stdout().write_all(&output.stdout)?;
+            std::io::stderr().write_all(&output.stderr)?;
+
+            return Err(anyhow!("signtool failed (see stdout/stderr for details)"));
+        }
     }
 
-    info!(" => Running signtool...");
-    let output = Command::new(signtool).args(args).output()?;
-
-    if !output.status.success() {
-        error!("signtool returned non-success status: {}", output.status);
-        std::io::stdout().write_all(&output.stdout)?;
-        std::io::stderr().write_all(&output.stderr)?;
-
-        Err(anyhow!("signtool failed (see stdout/stderr for details)"))
-    } else {
-        Ok(())
-    }
+    Ok(())
 }
 
 #[cfg(unix)]
