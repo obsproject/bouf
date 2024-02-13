@@ -302,10 +302,10 @@ impl Config {
             self.package.updater.notes_file = fs::canonicalize(notes_file)?;
         }
 
-        self.validate(false)
+        self.validate(false, args.packaging_only)
     }
 
-    pub fn validate(&mut self, deltas_only: bool) -> Result<()> {
+    pub fn validate(&mut self, deltas_only: bool, packaging_only: bool) -> Result<()> {
         // Output folder cannot be checked as it may not exist yet
         match fs::canonicalize(&self.env.input_dir) {
             Ok(res) => self.env.input_dir = res,
@@ -341,8 +341,12 @@ impl Config {
         // Check file paths (for binaries, also check if they are in %PATH%)
         misc::check_binary_path(&mut self.env.pdbcopy_path)?;
         misc::check_binary_path(&mut self.env.makensis_path)?;
-        misc::check_binary_path(&mut self.env.sevenzip_path)?;
-        misc::check_binary_path(&mut self.env.pandoc_path)?;
+        if !self.package.zip.skip {
+            misc::check_binary_path(&mut self.env.sevenzip_path)?;
+        }
+        if !packaging_only {
+            misc::check_binary_path(&mut self.env.pandoc_path)?;
+        }
 
         // Check if private key is set correctly (if signing is enabled)
         if !self.package.updater.skip_sign {
@@ -392,6 +396,10 @@ impl Config {
         // Check that NSIS script exists if installer not skipped
         if !self.package.installer.skip && !self.package.installer.nsis_script.exists() {
             bail!("NSIS script does not exist!")
+        }
+
+        if packaging_only {
+            return Ok(());
         }
 
         // Check that notes and vc redist files exists

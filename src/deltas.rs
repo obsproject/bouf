@@ -27,7 +27,7 @@ fn main() -> Result<()> {
     let mut conf = Config::from_file(&args.config)?;
     init_logger(conf.general.log_level.as_str());
 
-    conf.validate(true)?;
+    conf.validate(true, false)?;
     let mut gen = Generator::init(&conf, false);
     info!("Running generator...");
     gen.create_patches().context("Creating delta patches failed!")?;
