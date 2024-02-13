@@ -8,6 +8,7 @@ mod utils;
 
 use models::args::MainArgs;
 use models::config::Config;
+use models::manifest::Manifest;
 use steps::generate::Generator;
 use steps::package::Packaging;
 use steps::prepare::Preparator;
@@ -41,10 +42,13 @@ fn main() -> Result<()> {
         info!("Skipped preparation, this will also disable installer/zip creation.")
     }
 
-    // Create deltas and manifest
-    info!("Creating manifest and patches...");
-    let generator = Generator::init(&conf, !args.updater_data_only);
-    let mut manifest = generator.run(args.skip_patches).context("Error during generator run")?;
+    let mut manifest: Option<Manifest> = None;
+    if !args.packaging_only {
+        // Create deltas and manifest
+        info!("Creating manifest and patches...");
+        let generator = Generator::init(&conf, !args.updater_data_only);
+        manifest = Some(generator.run(args.skip_patches).context("Error during generator run")?);
+    }
 
     let packager = Packaging::init(&conf);
     // Create NSIS/ZIP
@@ -60,20 +64,22 @@ fn main() -> Result<()> {
         info!("Creating zip files...");
         packager.create_zips().context("Creating zip files failed")?;
         info!("ZIP files created successfully!")
-    } else {
+    } else if !conf.package.zip.skip {
         info!(" Skipping ZIP creation as preparation was skipped...")
     }
 
-    // Sign manifest if it was created
-    info!("Finalising manifest...");
-    let mf = packager
-        .finalise_manifest(&mut manifest)
-        .context("Finalising manifest failed")?;
+    if let Some(mut mf) = manifest {
+        // Sign manifest if it was created
+        info!("Finalising manifest...");
+        let manifest_file = packager
+            .finalise_manifest(&mut mf)
+            .context("Finalising manifest failed")?;
 
-    if !conf.package.updater.skip_sign {
-        info!("Signing manifest...");
-        let mut signer = Signer::init(conf.package.updater.private_key.as_ref());
-        signer.sign_file(&mf).context("Signing file failed")?;
+        if !conf.package.updater.skip_sign {
+            info!("Signing manifest...");
+            let mut signer = Signer::init(conf.package.updater.private_key.as_ref());
+            signer.sign_file(&manifest_file).context("Signing file failed")?;
+        }
     }
 
     if !args.updater_data_only && conf.post.copy_to_old {

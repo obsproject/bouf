@@ -45,6 +45,9 @@ pub struct MainArgs {
     /// Create only delta patches and manifest
     #[arg(long, default_value_t = false)]
     pub updater_data_only: bool,
+    /// Only sign files and create ZIPs + Installer packages
+    #[arg(long, default_value_t = false)]
+    pub packaging_only: bool,
     /// Skip creating NSIS installer
     #[arg(long, default_value_t = false)]
     pub skip_installer: bool,
