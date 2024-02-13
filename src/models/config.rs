@@ -295,11 +295,13 @@ impl Config {
         self.package.installer.skip = args.skip_installer || self.package.installer.skip;
         self.package.updater.skip_sign = args.skip_manifest_signing || self.package.updater.skip_sign;
 
-        if let Some(privkey) = &args.private_key {
-            self.package.updater.private_key = Some(privkey.to_owned());
-        }
-        if let Some(notes_file) = &args.notes_file {
-            self.package.updater.notes_file = fs::canonicalize(notes_file)?;
+        if !args.packaging_only {
+            if let Some(privkey) = &args.private_key {
+                self.package.updater.private_key = Some(privkey.to_owned());
+            }
+            if let Some(notes_file) = &args.notes_file {
+                self.package.updater.notes_file = fs::canonicalize(notes_file)?;
+            }
         }
 
         self.validate(false, args.packaging_only)
