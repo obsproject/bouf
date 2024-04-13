@@ -15,7 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Update rust toolchain
         run: rustup toolchain install stable --profile minimal
@@ -27,7 +27,7 @@ jobs:
         run: cargo build -r
 
       - name: Upload results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: bouf-build-${{ matrix.os }}
           path: target/release/bouf*
@@ -45,7 +45,7 @@ jobs:
           sparse-checkout: 'extra/nsis'
 
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
 
       - name: Package binaries
         run: |
@@ -82,7 +82,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Update rust toolchain
         run: rustup toolchain install stable --profile minimal
