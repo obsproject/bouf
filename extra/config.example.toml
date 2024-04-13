@@ -55,6 +55,10 @@ sign_exts = ['exe', 'dll', 'pyd']
 sign_kms_key_id = "projects/PROJECT_ID/locations/LOCATION/keyRings/KEY_RING/cryptoKeys/KEY_NAME/cryptoKeyVersions/1"
 sign_cert_file = "/path/to/public.cert"
 
+# when appending signatures to existing ones
+sign_append = true
+sign_ts_algo = "sha256"
+
 [prepare.strip_pdbs]
 # PDBs to not strip
 exclude = [

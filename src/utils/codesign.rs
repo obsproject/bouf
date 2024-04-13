@@ -23,13 +23,18 @@ pub fn sign(files: Vec<PathBuf>, opts: &CodesignOptions) -> Result<()> {
     let signtool = locate_signtool()?;
     debug!("Signtool found at {:?}", signtool);
 
-    let mut args: Vec<OsString> = vec![
-        "sign".into(),
-        "/fd".into(),
-        opts.sign_digest.to_owned().into(),
-        "/t".into(),
-        opts.sign_ts_serv.to_owned().into(),
-    ];
+    let mut args: Vec<OsString> = vec!["sign".into(), "/fd".into(), opts.sign_digest.to_owned().into()];
+
+    if opts.sign_append {
+        args.push("/as".into());
+        args.push("/tr".into());
+        args.push(opts.sign_ts_serv.to_owned().into());
+        args.push("/td".into());
+        args.push(opts.sign_ts_algo.to_owned().unwrap().into());
+    } else {
+        args.push("/t".into());
+        args.push(opts.sign_ts_serv.to_owned().into());
+    }
 
     if let Some(name) = &opts.sign_name {
         args.push("/n".into());

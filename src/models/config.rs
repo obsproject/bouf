@@ -91,6 +91,8 @@ pub struct CodesignOptions {
     pub sign_exts: Vec<String>,
     pub sign_kms_key_id: Option<String>,
     pub sign_cert_file: Option<String>,
+    pub sign_append: bool,
+    pub sign_ts_algo: Option<String>,
 }
 
 #[derive(Deserialize, Default)]
@@ -360,7 +362,6 @@ impl Config {
         // Check if codesigning parameters are set (if enabled)
         #[cfg(windows)]
         if !self.prepare.codesign.skip_sign
-            // This is kind of horrible.
             && ((self
                 .prepare
                 .codesign
@@ -377,7 +378,8 @@ impl Config {
                     .is_empty())
                 || self.prepare.codesign.sign_digest.is_empty()
                 || self.prepare.codesign.sign_ts_serv.is_empty()
-                || self.prepare.codesign.sign_exts.is_empty())
+                || self.prepare.codesign.sign_exts.is_empty()
+                || (self.prepare.codesign.sign_append && self.prepare.codesign.sign_ts_algo.is_none()))
         {
             bail!("Codesigning settings are incomplete!")
         }
