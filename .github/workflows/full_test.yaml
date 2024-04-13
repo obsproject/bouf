@@ -9,7 +9,7 @@ jobs:
     name: Prepare OBS Release
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Update rust toolchain
         run: rustup toolchain install stable --profile minimal
@@ -51,7 +51,7 @@ jobs:
         run: target/release/bouf --config extra/ci/config.toml --version 29.1.0-beta4 -i test/new -p test/old -o test/out --clear-output
 
       - name: Upload results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: obs_distribution
           path: test/out
