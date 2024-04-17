@@ -20,12 +20,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af #@v1
+        uses: actions-rust-lang/setup-rust-toolchain@b113a30d27a8e59c969077c0a0168cc13dab5ffc #@v1.8.0
         with:
-          profile: minimal
           toolchain: stable
           components: clippy
-          override: true
 
       - name: Restore Rust Cache
         uses: Swatinem/rust-cache@v2
