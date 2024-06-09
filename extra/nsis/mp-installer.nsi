@@ -261,18 +261,18 @@ Section "OBS Studio" SecCore
 	Delete "$INSTDIR\obs-plugins\64bit\win-mf*.*"
 	File /r "${BUILDDIR}\obs-plugins\64bit"
 
-	; 64 bit Visual Studio 2019 runtime check
+	; 64 bit Visual Studio 2022 runtime check
 	ClearErrors
 	SetOutPath "$PLUGINSDIR"
-	File check_for_64bit_visual_studio_2019_runtimes.exe
-	ExecWait "$PLUGINSDIR\check_for_64bit_visual_studio_2019_runtimes.exe" $R0
-	Delete "$PLUGINSDIR\check_for_64bit_visual_studio_2019_runtimes.exe"
-	IntCmp $R0 126 vs2019Missing_64 vs2019OK_64
-	vs2019Missing_64:
+	File check_for_64bit_visual_studio_2022_runtimes.exe
+	ExecWait "$PLUGINSDIR\check_for_64bit_visual_studio_2022_runtimes.exe" $R0
+	Delete "$PLUGINSDIR\check_for_64bit_visual_studio_2022_runtimes.exe"
+	IntCmp $R0 126 vs2022Missing_64 vs2022OK_64
+	vs2022Missing_64:
 		File VC_redist.x64.exe
 		ExecWait '"$PLUGINSDIR\VC_redist.x64.exe" /quiet /norestart'
 		Delete "$PLUGINSDIR\VC_redist.x64.exe"
-	vs2019OK_64:
+	vs2022OK_64:
 	ClearErrors
 
 	# ----------------------------
