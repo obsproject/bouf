@@ -167,7 +167,7 @@ fn run_sevenzip(sevenzip: &PathBuf, in_path: &PathBuf, out_path: &PathBuf) -> Re
 fn run_pandoc(path: &PathBuf, env: &EnvOptions) -> Result<String> {
     let args: Vec<OsString> = vec![
         "--from".into(),
-        "markdown".into(),
+        "rst".into(),
         "--to".into(),
         "html".into(),
         path.to_owned().into_os_string(),
