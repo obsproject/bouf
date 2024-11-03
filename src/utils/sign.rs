@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::{env, fs};
 
 use anyhow::Result;
+use base64::prelude::*;
 use rsa::sha2::{Digest, Sha512};
 use rsa::{pkcs1::DecodeRsaPrivateKey, pkcs8::DecodePrivateKey, Pkcs1v15Sign, RsaPrivateKey};
 
@@ -26,7 +27,7 @@ impl<'a> Signer<'a> {
             pem = fs::read_to_string(_path)?;
         } else {
             let b64key = env::var("UPDATER_PRIVATE_KEY")?;
-            let decoded = base64::decode(b64key)?;
+            let decoded = BASE64_STANDARD.decode(b64key)?;
             pem = String::from_utf8(decoded)?;
         }
 
