@@ -234,7 +234,7 @@ Function checkFilesInUse
 FunctionEnd
 
 Function LaunchOBS
-	Exec '"$WINDIR\explorer.exe" "$SMPROGRAMS\OBS Studio\OBS Studio (64bit).lnk"'
+	Exec '"$WINDIR\explorer.exe" "$SMPROGRAMS\OBS Studio.lnk"'
 FunctionEnd
 
 Section "OBS Studio" SecCore
@@ -303,12 +303,8 @@ Section "OBS Studio" SecCore
 	SetOutPath "$INSTDIR\bin\64bit"
 	CreateShortCut "$DESKTOP\OBS Studio.lnk" "$INSTDIR\bin\64bit\obs64.exe"
 
-	CreateDirectory "$SMPROGRAMS\OBS Studio"
-
 	SetOutPath "$INSTDIR\bin\64bit"
-	CreateShortCut "$SMPROGRAMS\OBS Studio\OBS Studio (64bit).lnk" "$INSTDIR\bin\64bit\obs64.exe"
-
-	CreateShortCut "$SMPROGRAMS\OBS Studio\Uninstall.lnk" "$INSTDIR\uninstall.exe"
+	CreateShortCut "$SMPROGRAMS\OBS Studio.lnk" "$INSTDIR\bin\64bit\obs64.exe"
 SectionEnd
 
 Section -FinishSection
@@ -413,9 +409,8 @@ Section "un.${APPNAME} App Files" UninstallSection1
 	SetShellVarContext all
 	Delete "$DESKTOP\OBS Studio.lnk"
 	Delete "$SMPROGRAMS\OBS Studio\OBS Studio (32bit).lnk"
-	Delete "$SMPROGRAMS\OBS Studio\Uninstall.lnk"
 	${if} ${RunningX64}
-		Delete "$SMPROGRAMS\OBS Studio\OBS Studio (64bit).lnk"
+		Delete "$SMPROGRAMS\OBS Studio.lnk"
 	${endif}
 	SetShellVarContext current
 
