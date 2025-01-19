@@ -26,6 +26,20 @@ fn main() -> Result<()> {
     };
     init_logger(level);
 
+    // Only validate config
+    if args.test_config {
+        return match conf.apply_args(&args) {
+            Ok(_) => {
+                info!("Config Ok!");
+                Ok(())
+            }
+            Err(e) => {
+                info!("Config invalid: {e}");
+                Err(e)
+            }
+        };
+    }
+
     info!("Verifying config validity...");
     conf.apply_args(&args).context("Config invalid")?;
     info!("Config Ok!");

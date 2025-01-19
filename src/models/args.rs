@@ -66,4 +66,7 @@ pub struct MainArgs {
     /// Verbose logging
     #[arg(long, short = 'd', default_value_t = false)]
     pub verbose: bool,
+    /// Test Config File
+    #[arg(long, short, default_value_t = false)]
+    pub test_config: bool,
 }
