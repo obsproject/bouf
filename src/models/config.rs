@@ -67,6 +67,7 @@ pub struct PreparationOptions {
     pub empty_output_dir: bool,
     pub copy: CopyOptions,
     pub codesign: CodesignOptions,
+    pub codesign_extra: Option<CodesignOptions>,
     pub strip_pdbs: StripPDBOptions,
 }
 
@@ -93,6 +94,7 @@ pub struct CodesignOptions {
     pub sign_cert_file: Option<String>,
     pub sign_append: bool,
     pub sign_ts_algo: Option<String>,
+    pub sign_filter: Vec<String>,
 }
 
 #[derive(Deserialize, Default)]

@@ -51,6 +51,11 @@ sign_digest = "sha512"
 sign_ts_serv = "http://timestamp.digicert.com"
 sign_exts = ['exe', 'dll', 'pyd']
 
+[prepare.codesign_extra]
+# Additional codesigning uses the same file extensions as the main one, and the skip option is ignored.
+sign_digest = "sha512"
+sign_ts_serv = "http://timestamp.digicert.com"
+
 # when using Google Cloud KMS
 sign_kms_key_id = "projects/PROJECT_ID/locations/LOCATION/keyRings/KEY_RING/cryptoKeys/KEY_NAME/cryptoKeyVersions/1"
 sign_cert_file = "/path/to/public.cert"
@@ -58,6 +63,9 @@ sign_cert_file = "/path/to/public.cert"
 # when appending signatures to existing ones
 sign_append = true
 sign_ts_algo = "sha256"
+
+# file filters, required for additional codesigning operations
+sign_filter = ["graphics-hook64.dll", "graphics-hook32.dll"]
 
 [prepare.strip_pdbs]
 # PDBs to not strip
