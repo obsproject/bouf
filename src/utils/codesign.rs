@@ -19,7 +19,7 @@ const MAX_FILES: usize = 5;
 const IGNORE_STATUS: i32 = 0xc0000374u32 as i32;
 
 #[cfg(windows)]
-pub fn sign(files: &Vec<PathBuf>, opts: &CodesignOptions) -> Result<()> {
+pub fn sign(files: &[PathBuf], opts: &CodesignOptions) -> Result<()> {
     let signtool = locate_signtool()?;
     debug!("Signtool found at {:?}", signtool);
 
@@ -51,7 +51,7 @@ pub fn sign(files: &Vec<PathBuf>, opts: &CodesignOptions) -> Result<()> {
         args.push(kms_id.into());
     }
 
-    let slices = (files.len() + MAX_FILES - 1) / MAX_FILES;
+    let slices = files.len().div_ceil(MAX_FILES);
     let mut ctr = 0;
 
     for chunk in files.chunks(MAX_FILES) {
