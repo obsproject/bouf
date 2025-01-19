@@ -230,7 +230,17 @@ impl<'a> Preparator<'a> {
             }
             to_sign.push(file.path().canonicalize()?)
         }
-        sign(to_sign, &self.config.prepare.codesign)?;
+        sign(&to_sign, &self.config.prepare.codesign)?;
+
+        // Run additional codesigning operations on files matching filter
+        if let Some(codesign_ex) = &self.config.prepare.codesign_extra {
+            let to_sign_ex: Vec<PathBuf> = to_sign
+                .iter()
+                .filter(|p| codesign_ex.sign_filter.iter().any(|f| p.to_str().unwrap().contains(f)))
+                .cloned()
+                .collect();
+            sign(&to_sign_ex, codesign_ex)?;
+        }
 
         Ok(())
     }

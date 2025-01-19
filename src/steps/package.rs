@@ -90,7 +90,7 @@ impl<'a> Packaging<'a> {
 
         info!("Signing installer file \"{}\"", path.display());
         let files: Vec<PathBuf> = vec![path];
-        sign(files, &self.config.prepare.codesign)?;
+        sign(&files, &self.config.prepare.codesign)?;
 
         Ok(())
     }

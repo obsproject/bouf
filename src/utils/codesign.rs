@@ -19,7 +19,7 @@ const MAX_FILES: usize = 5;
 const IGNORE_STATUS: i32 = 0xc0000374u32 as i32;
 
 #[cfg(windows)]
-pub fn sign(files: Vec<PathBuf>, opts: &CodesignOptions) -> Result<()> {
+pub fn sign(files: &Vec<PathBuf>, opts: &CodesignOptions) -> Result<()> {
     let signtool = locate_signtool()?;
     debug!("Signtool found at {:?}", signtool);
 
