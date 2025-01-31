@@ -49,4 +49,4 @@ hashbrown = { version = "0.15", features = ["rayon", "serde"] }
 
 # Used to find signtool for codesigning
 [target.'cfg(windows)'.dependencies]
-winreg = "0.52.0"
+winreg = "0.55.0"
