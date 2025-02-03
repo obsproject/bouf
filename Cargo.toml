@@ -28,7 +28,7 @@ serde = { version = "1.0.214", features = ["derive"] }
 serde_json = "1.0.132"
 # logging
 log = "0.4.22"
-env_logger = "0.10.2"
+env_logger = "0.11.6"
 # cli/config
 clap = { version = "4.5", features = ["derive", "wrap_help"] }
 toml = "0.8.19"
