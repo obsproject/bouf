@@ -25,9 +25,6 @@ jobs:
           toolchain: stable
           components: clippy
 
-      - name: Restore Rust Cache
-        uses: Swatinem/rust-cache@v2
-
       - name: Install required cargo
         run: cargo install clippy-sarif sarif-fmt
 
