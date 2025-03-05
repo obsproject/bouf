@@ -11,7 +11,7 @@ use xz2::write::XzEncoder;
 use crate::utils::hash::{hash_file, FileInfo};
 
 // 9 | LZMA_PRESET_EXTREME
-const LZMA_PRESET: u32 = 9 | 1 << 31;
+const LZMA_PRESET: u32 = 9 | (1 << 31);
 
 /// Create OBS-bsdiff compatible patch file (bsdiff + LZMA)
 pub fn create_patch(old: &Path, new: &Path, patch: &Path) -> Result<FileInfo> {
