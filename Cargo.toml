@@ -36,7 +36,7 @@ toml = "0.8.19"
 bsdiff = { git = "https://github.com/space-wizards/bsdiff-rs", rev = "a77199a6dd31d90555b4efd2c57d91d3aa3b69e5" }
 xz2 = "0.1.7"
 zstd = "0.13.2"
-object = { version = "0.36.5", features = ["read"] }
+object = { version = "0.37.1", features = ["read"] }
 # singing
 base64 = "0.22.1"
 rsa = { version = "0.9", features = ["sha2"] }
