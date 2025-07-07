@@ -44,7 +44,7 @@ rsa = { version = "0.9", features = ["sha2"] }
 blake2 = "0.10.6"
 # parallel processing
 rayon = "1.10.0"
-indicatif = { version = "0.17.8", features = ["rayon"] }
+indicatif = { version = "0.18.0", features = ["rayon"] }
 hashbrown = { version = "0.15", features = ["rayon", "serde"] }
 
 # Used to find signtool for codesigning
