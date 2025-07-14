@@ -31,7 +31,7 @@ log = "0.4.22"
 env_logger = "0.10.2"
 # cli/config
 clap = { version = "4.5", features = ["derive", "wrap_help"] }
-toml = "0.8.19"
+toml = "0.9.2"
 # delta patching
 bsdiff = { git = "https://github.com/space-wizards/bsdiff-rs", rev = "a77199a6dd31d90555b4efd2c57d91d3aa3b69e5" }
 xz2 = "0.1.7"
