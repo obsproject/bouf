@@ -8,13 +8,12 @@ pub fn init_logger(level: &str) {
 
     Builder::from_env(env)
         .format(|buf, record| {
-            writeln!(
-                buf,
-                "[{}] {}: {}",
-                buf.timestamp(),
-                buf.default_styled_level(record.level()),
-                record.args()
-            )
+            let timestamp = buf.timestamp();
+            let style = buf.default_level_style(record.level());
+            let level = record.level();
+            let message = record.args();
+
+            writeln!(buf, "[{timestamp}] {style}{level}{style:#}: {message}")
         })
         .init();
 }
