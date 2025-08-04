@@ -10,9 +10,10 @@ pub fn init_logger(level: &str) {
         .format(|buf, record| {
             writeln!(
                 buf,
-                "[{}] {}: {}",
+                "[{}] {}{}: {}",
                 buf.timestamp(),
                 buf.default_level_style(record.level()),
+                record.level(),
                 record.args()
             )
         })
