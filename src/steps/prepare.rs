@@ -328,6 +328,7 @@ fn copy_files(
 
         // ToDo figure out if this should be configurable
         if !relative_path.starts_with("bin")
+            && !relative_path.starts_with("core")
             && !relative_path.starts_with("data")
             && !relative_path.starts_with("obs-plugins")
         {
