@@ -210,6 +210,10 @@ Function checkDLLs
 	OBSInstallerUtils::ResetInUseFileChecks
 	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\bin\64bit\avutil-57.dll"
 	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\bin\64bit\swscale-6.dll"
+	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\core\win-capture\data\graphics-hook32.dll"
+	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\core\win-capture\data\graphics-hook64.dll"
+	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\core\win-dshow\data\obs-virtualcam-module32.dll"
+	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\core\win-dshow\data\obs-virtualcam-module64.dll"
 	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\data\obs-plugins\win-capture\graphics-hook32.dll"
 	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\data\obs-plugins\win-capture\graphics-hook64.dll"
 	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\data\obs-plugins\win-dshow\obs-virtualcam-module32.dll"
@@ -250,16 +254,22 @@ Section "OBS Studio" SecCore
 	; Set Section Files and Shortcuts
 	SetOutPath "$INSTDIR"
 
+	; Copy data directory
 	File /r "${BUILDDIR}\data"
 
+	; Delete old Qt5 files
 	SetOutPath "$INSTDIR\bin"
 	Delete "$INSTDIR\bin\64bit\Qt5*.*"
+	; Copy bin\64bit
 	File /r "${BUILDDIR}\bin\64bit"
+	; Delete discontinued plugins
 	SetOutPath "$INSTDIR\obs-plugins"
 	Delete "$INSTDIR\obs-plugins\64bit\decklink-ouput*.*"
 	Delete "$INSTDIR\obs-plugins\64bit\win-decklink*.*"
 	Delete "$INSTDIR\obs-plugins\64bit\win-mf*.*"
-	File /r "${BUILDDIR}\obs-plugins\64bit"
+	; Copy new plugins
+	SetOutPath "$INSTDIR"
+	File /r "${BUILDDIR}\core"
 
 	; 64 bit Visual Studio 2022 runtime check
 	ClearErrors
@@ -279,23 +289,30 @@ Section "OBS Studio" SecCore
 
 	SetShellVarContext all
 
+	; Copy data directory
 	SetOutPath "$INSTDIR"
 	File /r "${BUILDDIR}\data"
+	; Kill browser plugin process in old paths
 	SetOutPath "$INSTDIR\obs-plugins"
 	OBSInstallerUtils::KillProcess "32bit\obs-browser-page.exe"
 	${if} ${RunningX64}
 		OBSInstallerUtils::KillProcess "64bit\obs-browser-page.exe"
 	${endif}
-	File /r "${BUILDDIR}\obs-plugins\64bit"
+	; Kill browser plugin process in new path
+	SetOutPath "$INSTDIR\core\obs-browser"
+	OBSInstallerUtils::KillProcess "obs-browser-page.exe"
+	; Copy new plugins
+	SetOutPath "$INSTDIR"
+	File /r "${BUILDDIR}\core"
 	SetOutPath "$INSTDIR\bin\64bit"
 
 	# ----------------------------
 	# Copy game capture files to ProgramData
 	SetOutPath "$APPDATA\obs-studio-hook"
-	File "${BUILDDIR}\data\obs-plugins\win-capture\graphics-hook32.dll"
-	File "${BUILDDIR}\data\obs-plugins\win-capture\graphics-hook64.dll"
-	File "${BUILDDIR}\data\obs-plugins\win-capture\obs-vulkan32.json"
-	File "${BUILDDIR}\data\obs-plugins\win-capture\obs-vulkan64.json"
+	File "${BUILDDIR}\core\win-capture\data\graphics-hook32.dll"
+	File "${BUILDDIR}\core\win-capture\data\graphics-hook64.dll"
+	File "${BUILDDIR}\core\win-capture\data\obs-vulkan32.json"
+	File "${BUILDDIR}\core\win-capture\data\obs-vulkan64.json"
 	OBSInstallerUtils::AddAllApplicationPackages "$APPDATA\obs-studio-hook"
 
 	WriteUninstaller "$INSTDIR\uninstall.exe"
@@ -343,9 +360,9 @@ Section -FinishSection
 	# ---------------------------------------
 	# Register virtual camera dlls
 
-	Exec '"$SYSDIR\regsvr32.exe" /s "$INSTDIR\data\obs-plugins\win-dshow\obs-virtualcam-module32.dll"'
+	Exec '"$SYSDIR\regsvr32.exe" /s "$INSTDIR\core\win-dshow\data\obs-virtualcam-module32.dll"'
 	${if} ${RunningX64}
-		Exec '"$SYSDIR\regsvr32.exe" /s "$INSTDIR\data\obs-plugins\win-dshow\obs-virtualcam-module64.dll"'
+		Exec '"$SYSDIR\regsvr32.exe" /s "$INSTDIR\core\win-dshow\data\obs-virtualcam-module64.dll"'
 	${endif}
 
 	# ---------------------------------------
@@ -397,10 +414,16 @@ Section "un.${APPNAME} App Files" UninstallSection1
 	SetShellVarContext current
 	ClearErrors
 
-	; Unregister virtual camera dlls
+	; Unregister old virtual camera dlls
 	Exec '"$SYSDIR\regsvr32.exe" /u /s "$INSTDIR\data\obs-plugins\win-dshow\obs-virtualcam-module32.dll"'
 	${if} ${RunningX64}
 		Exec '"$SYSDIR\regsvr32.exe" /u /s "$INSTDIR\data\obs-plugins\win-dshow\obs-virtualcam-module64.dll"'
+	${endif}
+
+	; Unregister virtual camera dlls
+	Exec '"$SYSDIR\regsvr32.exe" /u /s "$INSTDIR\core\win-dshow\data\obs-virtualcam-module32.dll"'
+	${if} ${RunningX64}
+		Exec '"$SYSDIR\regsvr32.exe" /u /s "$INSTDIR\core\win-dshow\data\obs-virtualcam-module64.dll"'
 	${endif}
 
 	; Remove from registry...
@@ -423,6 +446,7 @@ Section "un.${APPNAME} App Files" UninstallSection1
 
 	; Clean up OBS Studio
 	RMDir /r "$INSTDIR\bin"
+	RMDir /r "$INSTDIR\core"
 	RMDir /r "$INSTDIR\data"
 	RMDir /r "$INSTDIR\obs-plugins"
 	RMDir "$INSTDIR"
