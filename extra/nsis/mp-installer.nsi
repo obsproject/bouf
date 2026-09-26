@@ -25,8 +25,8 @@ ManifestDPIAware true
 !define APPNAME "OBS Studio"
 
 !ifndef APPVERSION
-!define APPVERSION "28.0.0"
-!define SHORTVERSION "28.0.0"
+!define APPVERSION "31.0.0"
+!define SHORTVERSION "31.0.0"
 !endif
 
 !define APPNAMEANDVERSION "${APPNAME} ${SHORTVERSION}"
@@ -317,16 +317,17 @@ Section "OBS Studio" SecCore
 
 	WriteUninstaller "$INSTDIR\uninstall.exe"
 
-	SetOutPath "$INSTDIR\bin\64bit"
-	CreateShortCut "$DESKTOP\OBS Studio.lnk" "$INSTDIR\bin\64bit\obs64.exe"
-
-	SetOutPath "$INSTDIR\bin\64bit"
-	CreateShortCut "$SMPROGRAMS\OBS Studio.lnk" "$INSTDIR\bin\64bit\obs64.exe"
 
 	; Delete old Start Menu shortcuts if installing upon an older version
 	Delete "$SMPROGRAMS\OBS Studio\OBS Studio (64bit).lnk"
 	Delete "$SMPROGRAMS\OBS Studio\Uninstall.lnk"
 	RMDir "$SMPROGRAMS\OBS Studio"
+
+	SetOutPath "$INSTDIR\bin\64bit"
+	CreateShortCut "$DESKTOP\OBS Studio.lnk" "$INSTDIR\bin\64bit\obs64.exe"
+
+	SetOutPath "$INSTDIR\bin\64bit"
+	CreateShortCut "$SMPROGRAMS\OBS Studio.lnk" "$INSTDIR\bin\64bit\obs64.exe"
 SectionEnd
 
 Section -FinishSection
@@ -383,7 +384,6 @@ Section -FinishSection
 	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "Publisher" "OBS Project"
 	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "HelpLink" "https://obsproject.com"
 	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayVersion" "${APPVERSION}"
-
 SectionEnd
 
 ; Modern install component descriptions
@@ -405,20 +405,18 @@ Section "un.${APPNAME} App Files" UninstallSection1
 	SetRegView 32
 	DeleteRegValue HKCU "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan32.json"
 	DeleteRegValue HKLM "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan32.json"
-	${if} ${RunningX64}
-		SetRegView 64
-		DeleteRegValue HKCU "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan64.json"
-		DeleteRegValue HKLM "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan64.json"
-	${endif}
+
+	SetRegView 64
+	DeleteRegValue HKCU "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan64.json"
+	DeleteRegValue HKLM "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan64.json"
+
 	SetRegView default
 	SetShellVarContext current
 	ClearErrors
 
 	; Unregister old virtual camera dlls
 	Exec '"$SYSDIR\regsvr32.exe" /u /s "$INSTDIR\data\obs-plugins\win-dshow\obs-virtualcam-module32.dll"'
-	${if} ${RunningX64}
-		Exec '"$SYSDIR\regsvr32.exe" /u /s "$INSTDIR\data\obs-plugins\win-dshow\obs-virtualcam-module64.dll"'
-	${endif}
+	Exec '"$SYSDIR\regsvr32.exe" /u /s "$INSTDIR\data\obs-plugins\win-dshow\obs-virtualcam-module64.dll"'
 
 	; Unregister virtual camera dlls
 	Exec '"$SYSDIR\regsvr32.exe" /u /s "$INSTDIR\core\win-dshow\data\obs-virtualcam-module32.dll"'
@@ -435,13 +433,9 @@ Section "un.${APPNAME} App Files" UninstallSection1
 
 	; Delete Shortcuts
 	SetShellVarContext all
+	Delete "$SMPROGRAMS\OBS Studio.lnk"
 	Delete "$DESKTOP\OBS Studio.lnk"
-	Delete "$SMPROGRAMS\OBS Studio\OBS Studio (32bit).lnk"
-	Delete "$SMPROGRAMS\OBS Studio\Uninstall.lnk"
-	${if} ${RunningX64}
-		Delete "$SMPROGRAMS\OBS Studio\OBS Studio (64bit).lnk"
-		Delete "$SMPROGRAMS\OBS Studio.lnk"
-	${endif}
+	RMDir /r "$SMPROGRAMS\OBS Studio"
 	SetShellVarContext current
 
 	; Clean up OBS Studio
@@ -449,11 +443,9 @@ Section "un.${APPNAME} App Files" UninstallSection1
 	RMDir /r "$INSTDIR\core"
 	RMDir /r "$INSTDIR\data"
 	RMDir /r "$INSTDIR\obs-plugins"
+	RMDir /r "$INSTDIR\OBS Studio"
 	RMDir "$INSTDIR"
-
-	; Remove remaining directories
-	RMDir "$SMPROGRAMS\OBS Studio"
-	RMDir "$INSTDIR\OBS Studio"
+	SetAutoClose true
 SectionEnd
 
 Section /o "un.Settings, Scenes, etc." UninstallSection2
@@ -469,7 +461,7 @@ SectionEnd
 VIProductVersion "${APPVERSION}.0"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "${APPNAME}"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "CompanyName" "OBS Project"
-VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "(C) 2012-2021"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "(C) 2012-2026"
 ; FileDescription is what shows in the UAC elevation prompt when signed
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "${APPNAME} Installer"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "${APPVERSION}"
